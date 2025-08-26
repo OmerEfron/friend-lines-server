@@ -1,11 +1,15 @@
 const { v4: uuidv4 } = require('uuid');
 const bcrypt = require('bcryptjs');
+const userValidator = require('./validators/userValidator');
 
 // In-memory database
 const users = new Map();
 
 const userService = {
   async createUser(userData) {
+    // Validate input data
+    userValidator.validateRegistration(userData);
+    
     const { username, fullName, email, password } = userData;
     
     // Check if user already exists

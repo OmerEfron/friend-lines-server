@@ -5,14 +5,6 @@ const authController = {
     try {
       const { username, password } = req.body;
       
-      // Basic validation
-      if (!username || !password) {
-        return res.status(400).json({
-          success: false,
-          error: { message: 'Username and password are required' }
-        });
-      }
-      
       const result = await authService.login(username, password);
       
       res.status(200).json({

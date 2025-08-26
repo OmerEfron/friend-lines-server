@@ -1,11 +1,15 @@
 const jwt = require('jsonwebtoken');
 const userService = require('./userService');
+const userValidator = require('./validators/userValidator');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 const JWT_EXPIRES_IN = '24h';
 
 const authService = {
   async login(username, password) {
+    // Validate input data
+    userValidator.validateLogin({ username, password });
+    
     const user = await userService.findUserByUsername(username);
     if (!user) {
       throw new Error('Invalid credentials');
