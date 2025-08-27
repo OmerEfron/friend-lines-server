@@ -1,0 +1,76 @@
+FRIEND LINES API ENDPOINTS SUMMARY
+==================================
+
+BASE URL: https://friend-lines-server.onrender.com
+AUTHENTICATION: JWT Bearer Token (Authorization: Bearer <token>)
+CONTENT-TYPE: application/json
+
+HEALTH CHECK:
+GET /api/health - No auth required - Returns server status
+
+USER MANAGEMENT:
+POST /api/users/register - No auth - Body: {username, fullName, email, password}
+GET /api/users/search?q=<query>&page=<page>&limit=<limit> - Auth required
+
+AUTHENTICATION:
+POST /api/auth/login - No auth - Body: {username, password} - Returns JWT token
+
+FRIENDSHIPS:
+POST /api/friendships/request - Auth required - Body: {friendId}
+POST /api/friendships/accept - Auth required - Body: {friendId}
+GET /api/friendships/list?page=<page>&limit=<limit> - Auth required
+GET /api/friendships/requests?page=<page>&limit=<limit> - Auth required
+DELETE /api/friendships/:friendId - Auth required
+
+GROUPS:
+POST /api/groups/create - Auth required - Body: {name, description?}
+POST /api/groups/invite - Auth required - Body: {groupId, invitedUserId}
+POST /api/groups/join - Auth required - Body: {groupId}
+GET /api/groups/my-groups?page=<page>&limit=<limit> - Auth required
+GET /api/groups/invitations?page=<page>&limit=<limit> - Auth required
+GET /api/groups/:groupId/members?page=<page>&limit=<limit> - Auth required
+DELETE /api/groups/:groupId/leave - Auth required
+
+NEWSFLASHES:
+POST /api/newsflashes/create - Auth required - Body: {content, targetType, targetId?}
+GET /api/newsflashes/my-feed?page=<page>&limit=<limit> - Auth required
+GET /api/newsflashes/author/:authorId?page=<page>&limit=<limit> - Auth required
+GET /api/newsflashes/group/:groupId?page=<page>&limit=<limit> - Auth required
+DELETE /api/newsflashes/:newsflashId - Auth required
+
+NOTIFICATIONS:
+POST /api/notifications/register-device - Auth required - Body: {deviceToken, platform?}
+GET /api/notifications/history - Auth required
+
+PAGINATION PARAMETERS:
+- page: Page number (default: 1, min: 1)
+- limit: Items per page (default: 20, min: 1, max: 100)
+
+VALIDATION RULES:
+- username: 3-30 chars, alphanumeric + underscore only
+- email: Valid email format
+- password: Minimum 6 characters
+- newsflash content: Maximum 100 characters
+- group name: Maximum 100 characters
+- group description: Maximum 500 characters
+
+RESPONSE FORMATS:
+Success: {"success": true, "data": {...}, "message": "..."}
+Error: {"success": false, "message": "error message", "error": "type", "statusCode": 400}
+
+COMMON STATUS CODES:
+200: Success
+400: Bad Request (validation error)
+401: Unauthorized (auth required)
+403: Forbidden (insufficient permissions)
+404: Not Found
+500: Internal Server Error
+
+DATA TYPES:
+- UUIDs: Standard UUID v4 format
+- Timestamps: ISO 8601 format (UTC)
+- MongoDB IDs: ObjectId format for database records
+- Pagination: Always includes {page, limit, total, totalPages}
+
+RATE LIMITING: Implemented - Use exponential backoff for retries
+TOKEN EXPIRY: JWT tokens expire after 24 hours

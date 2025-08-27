@@ -43,6 +43,28 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
+// AI-friendly documentation routes
+app.get('/api/docs/openapi.yaml', (req, res) => {
+  res.setHeader('Content-Type', 'text/yaml');
+  res.sendFile(path.join(__dirname, 'public', 'openapi.yaml'));
+});
+
+app.get('/api/docs/reference.md', (req, res) => {
+  res.setHeader('Content-Type', 'text/markdown');
+  res.sendFile(path.join(__dirname, 'public', 'api-reference.md'));
+});
+
+app.get('/api/docs/endpoints.txt', (req, res) => {
+  res.setHeader('Content-Type', 'text/plain');
+  res.sendFile(path.join(__dirname, 'public', 'endpoints-summary.txt'));
+});
+
+// AI documentation index
+app.get('/api/docs', (req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.sendFile(path.join(__dirname, 'public', 'ai-docs-index.json'));
+});
+
 // Error handler middleware (must be last)
 app.use(errorHandler);
 

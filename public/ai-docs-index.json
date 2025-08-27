@@ -1,0 +1,139 @@
+{
+  "api": {
+    "name": "Friend Lines API",
+    "version": "1.0.0",
+    "description": "Social networking API for friends, groups, and newsflashes with push notifications",
+    "baseUrl": "https://friend-lines-server.onrender.com"
+  },
+  "documentation": {
+    "human_readable": {
+      "html": {
+        "url": "/",
+        "description": "Beautiful HTML documentation with examples and styling",
+        "format": "HTML",
+        "best_for": "Human developers, visual presentation"
+      }
+    },
+    "ai_agent_friendly": {
+      "openapi_yaml": {
+        "url": "/api/docs/openapi.yaml",
+        "description": "OpenAPI 3.0 specification in YAML format",
+        "format": "YAML",
+        "content_type": "text/yaml",
+        "best_for": "AI agents, API clients, Swagger tools, code generation",
+        "features": [
+          "Complete API schema",
+          "Request/response examples",
+          "Data validation rules",
+          "Authentication details",
+          "Error codes and messages"
+        ]
+      },
+      "markdown_reference": {
+        "url": "/api/docs/reference.md",
+        "description": "Comprehensive API reference in Markdown format",
+        "format": "Markdown",
+        "content_type": "text/markdown",
+        "best_for": "AI agents, documentation tools, easy parsing",
+        "features": [
+          "Endpoint descriptions",
+          "Data models",
+          "Examples and curl commands",
+          "Validation rules",
+          "Response formats"
+        ]
+      },
+      "text_summary": {
+        "url": "/api/docs/endpoints.txt",
+        "description": "Concise endpoints summary in plain text",
+        "format": "Plain Text",
+        "content_type": "text/plain",
+        "best_for": "AI agents, quick reference, simple parsing",
+        "features": [
+          "All endpoints listed",
+          "Authentication requirements",
+          "Query parameters",
+          "Validation rules",
+          "Response codes"
+        ]
+      },
+      "json_endpoints": {
+        "url": "/api-endpoints.json",
+        "description": "Machine-readable endpoints list in JSON format",
+        "format": "JSON",
+        "content_type": "application/json",
+        "best_for": "AI agents, programmatic access, integrations",
+        "features": [
+          "Structured endpoint data",
+          "Authentication info",
+          "Pagination details",
+          "Error responses",
+          "Rate limiting info"
+        ]
+      }
+    }
+  },
+  "ai_agent_usage": {
+    "recommended_formats": [
+      "openapi_yaml",
+      "markdown_reference",
+      "text_summary"
+    ],
+    "parsing_instructions": {
+      "openapi_yaml": "Parse as YAML, contains complete API schema and examples",
+      "markdown_reference": "Parse as Markdown, contains detailed endpoint documentation",
+      "text_summary": "Parse as plain text, contains concise endpoint listing",
+      "json_endpoints": "Parse as JSON, contains structured endpoint information"
+    },
+    "authentication_info": {
+      "type": "JWT Bearer Token",
+      "header": "Authorization: Bearer <token>",
+      "endpoint": "/api/auth/login",
+      "expiry": "24 hours"
+    },
+    "common_patterns": {
+      "pagination": "All list endpoints support ?page=<num>&limit=<num>",
+      "response_format": "Always returns {success: boolean, data: object, message?: string}",
+      "error_handling": "Errors include descriptive messages and status codes",
+      "validation": "Input validation with clear error messages"
+    }
+  },
+  "endpoints_summary": {
+    "total_endpoints": 25,
+    "categories": {
+      "health": 1,
+      "users": 2,
+      "authentication": 1,
+      "friendships": 5,
+      "groups": 7,
+      "newsflashes": 5,
+      "notifications": 2
+    },
+    "authentication_required": {
+      "yes": 22,
+      "no": 3
+    },
+    "http_methods": {
+      "GET": 12,
+      "POST": 10,
+      "DELETE": 3
+    }
+  },
+  "data_models": {
+    "User": "UUID, username, fullName, email, timestamps",
+    "Group": "MongoDB ID, name, description, creatorId, members, timestamps",
+    "Newsflash": "MongoDB ID, authorId, content (max 100 chars), targetType, targetId, timestamps",
+    "Friendship": "MongoDB ID, user1Id, user2Id, status, timestamps",
+    "DeviceToken": "MongoDB ID, userId, deviceToken, platform, isActive, timestamps"
+  },
+  "rate_limiting": {
+    "enabled": true,
+    "recommendation": "Implement exponential backoff for retries"
+  },
+  "pagination": {
+    "default_page": 1,
+    "default_limit": 20,
+    "max_limit": 100,
+    "response_includes": ["page", "limit", "total", "totalPages"]
+  }
+}

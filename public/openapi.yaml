@@ -1,0 +1,853 @@
+openapi: 3.0.0
+info:
+  title: Friend Lines API
+  description: |
+    A social networking API for friends, groups, and newsflashes with push notifications.
+    
+    ## Key Features
+    - User authentication with JWT
+    - Friendship management system
+    - Group creation and management
+    - Newsflash sharing (friends/groups)
+    - Push notifications via Firebase Cloud Messaging
+    - Pagination and search capabilities
+    
+    ## Authentication
+    Most endpoints require JWT authentication. Include the token in the Authorization header:
+    `Authorization: Bearer <your-jwt-token>`
+    
+    ## Rate Limiting
+    API calls are rate-limited to prevent abuse. Implement exponential backoff for retries.
+    
+    ## Pagination
+    List endpoints support pagination with `page` and `limit` query parameters.
+    Default: page=1, limit=20, max limit=100.
+  version: 1.0.0
+  contact:
+    name: Friend Lines Team
+    url: https://friend-lines-server.onrender.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: https://friend-lines-server.onrender.com
+    description: Production server
+  - url: http://localhost:3000
+    description: Local development server
+
+paths:
+  /api/health:
+    get:
+      summary: Health Check
+      description: Check if the server is running and healthy
+      tags: [Health]
+      responses:
+        '200':
+          description: Server is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "healthy"
+                    description: Server health status
+                  timestamp:
+                    type: string
+                    format: date-time
+                    description: Current server time
+                  uptime:
+                    type: number
+                    description: Server uptime in seconds
+                  environment:
+                    type: string
+                    example: "production"
+                    description: Current environment
+                  version:
+                    type: string
+                    example: "1.0.0"
+                    description: API version
+
+  /api/users/register:
+    post:
+      summary: Register User
+      description: Create a new user account with email, username, and password
+      tags: [Users]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, fullName, email, password]
+              properties:
+                username:
+                  type: string
+                  minLength: 3
+                  maxLength: 30
+                  pattern: '^[a-zA-Z0-9_]+$'
+                  example: "newuser"
+                  description: Unique username (alphanumeric + underscore only)
+                fullName:
+                  type: string
+                  maxLength: 100
+                  example: "John Doe"
+                  description: User's full name
+                email:
+                  type: string
+                  format: email
+                  example: "john.doe@example.com"
+                  description: Valid email address
+                password:
+                  type: string
+                  minLength: 6
+                  example: "securepass123"
+                  description: Password (minimum 6 characters)
+      responses:
+        '200':
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      user:
+                        $ref: '#/components/schemas/User'
+        '400':
+          description: Validation error or user already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/auth/login:
+    post:
+      summary: User Login
+      description: Authenticate a user and receive a JWT token for API access
+      tags: [Authentication]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, password]
+              properties:
+                username:
+                  type: string
+                  example: "john_doe"
+                  description: Username or email address
+                password:
+                  type: string
+                  example: "securepass123"
+                  description: User's password
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      user:
+                        $ref: '#/components/schemas/User'
+                      token:
+                        type: string
+                        description: JWT token for authentication
+                        example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/users/search:
+    get:
+      summary: Search Users
+      description: Search for users by username, full name, or email with pagination
+      tags: [Users]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: q
+          in: query
+          description: Search query (username, full name, or email)
+          required: true
+          schema:
+            type: string
+            minLength: 1
+            example: "john"
+        - name: page
+          in: query
+          description: Page number for pagination
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+            example: 1
+        - name: limit
+          in: query
+          description: Number of items per page
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+            example: 20
+      responses:
+        '200':
+          description: Search results with pagination
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      users:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/User'
+                      pagination:
+                        $ref: '#/components/schemas/Pagination'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/friendships/request:
+    post:
+      summary: Send Friend Request
+      description: Send a friend request to another user
+      tags: [Friendships]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [friendId]
+              properties:
+                friendId:
+                  type: string
+                  format: uuid
+                  example: "123e4567-e89b-12d3-a456-426614174000"
+                  description: UUID of the user to send friend request to
+      responses:
+        '200':
+          description: Friend request sent successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: Invalid request or already friends
+        '401':
+          description: Authentication required
+        '404':
+          description: Target user not found
+
+  /api/friendships/accept:
+    post:
+      summary: Accept Friend Request
+      description: Accept a pending friend request from another user
+      tags: [Friendships]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [friendId]
+              properties:
+                friendId:
+                  type: string
+                  format: uuid
+                  example: "123e4567-e89b-12d3-a456-426614174000"
+                  description: UUID of the user who sent the friend request
+      responses:
+        '200':
+          description: Friend request accepted successfully
+        '400':
+          description: No pending request found
+        '401':
+          description: Authentication required
+        '404':
+          description: User not found
+
+  /api/friendships/list:
+    get:
+      summary: Get Friends List
+      description: Retrieve list of current friends with pagination
+      tags: [Friendships]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          description: Page number for pagination
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          description: Number of items per page
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: List of friends with pagination
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      friends:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/User'
+                      pagination:
+                        $ref: '#/components/schemas/Pagination'
+        '401':
+          description: Authentication required
+
+  /api/friendships/requests:
+    get:
+      summary: Get Pending Friend Requests
+      description: Retrieve list of pending friend requests
+      tags: [Friendships]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          description: Page number for pagination
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          description: Number of items per page
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: List of pending friend requests
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      requests:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/FriendshipRequest'
+                      pagination:
+                        $ref: '#/components/schemas/Pagination'
+        '401':
+          description: Authentication required
+
+  /api/groups/create:
+    post:
+      summary: Create Group
+      description: Create a new group with name and description
+      tags: [Groups]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name:
+                  type: string
+                  minLength: 1
+                  maxLength: 100
+                  example: "My Friends Group"
+                  description: Group name
+                description:
+                  type: string
+                  maxLength: 500
+                  example: "A group for my close friends"
+                  description: Group description (optional)
+      responses:
+        '200':
+          description: Group created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      group:
+                        $ref: '#/components/schemas/Group'
+        '400':
+          description: Validation error
+        '401':
+          description: Authentication required
+
+  /api/groups/invite:
+    post:
+      summary: Invite User to Group
+      description: Invite a user to join a group (group creator only)
+      tags: [Groups]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [groupId, invitedUserId]
+              properties:
+                groupId:
+                  type: string
+                  format: uuid
+                  example: "123e4567-e89b-12d3-a456-426614174000"
+                  description: UUID of the group
+                invitedUserId:
+                  type: string
+                  format: uuid
+                  example: "123e4567-e89b-12d3-a456-426614174001"
+                  description: UUID of the user to invite
+      responses:
+        '200':
+          description: Invitation sent successfully
+        '400':
+          description: Invalid request or user already in group
+        '401':
+          description: Authentication required
+        '403':
+          description: Not authorized to invite to this group
+        '404':
+          description: Group or user not found
+
+  /api/groups/my-groups:
+    get:
+      summary: Get User's Groups
+      description: Retrieve list of groups where the user is a member
+      tags: [Groups]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          description: Page number for pagination
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          description: Number of items per page
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: List of user's groups with pagination
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      groups:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Group'
+                      pagination:
+                        $ref: '#/components/schemas/Pagination'
+        '401':
+          description: Authentication required
+
+  /api/newsflashes/create:
+    post:
+      summary: Create Newsflash
+      description: Create a new newsflash to share with friends or specific group
+      tags: [Newsflashes]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [content, targetType]
+              properties:
+                content:
+                  type: string
+                  minLength: 1
+                  maxLength: 100
+                  example: "Hello friends! This is my newsflash."
+                  description: Newsflash content (max 100 characters)
+                targetType:
+                  type: string
+                  enum: [friends, group]
+                  example: "friends"
+                  description: Who can see this newsflash
+                targetId:
+                  type: string
+                  format: uuid
+                  example: "123e4567-e89b-12d3-a456-426614174000"
+                  description: Group ID if targetType is 'group'
+      responses:
+        '200':
+          description: Newsflash created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      newsflash:
+                        $ref: '#/components/schemas/Newsflash'
+        '400':
+          description: Validation error or invalid target
+        '401':
+          description: Authentication required
+
+  /api/newsflashes/my-feed:
+    get:
+      summary: Get User's Newsfeed
+      description: Retrieve personalized newsflash feed for the authenticated user
+      tags: [Newsflashes]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          description: Page number for pagination
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          description: Number of items per page
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: Newsflash feed with pagination
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      newsflashes:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/NewsflashWithAuthor'
+                      pagination:
+                        $ref: '#/components/schemas/Pagination'
+        '401':
+          description: Authentication required
+
+  /api/notifications/register-device:
+    post:
+      summary: Register Device for Push Notifications
+      description: Register a mobile device to receive push notifications
+      tags: [Notifications]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [deviceToken]
+              properties:
+                deviceToken:
+                  type: string
+                  example: "fcm-device-token-here"
+                  description: Firebase Cloud Messaging device token
+                platform:
+                  type: string
+                  enum: [ios, android, web]
+                  default: "android"
+                  example: "android"
+                  description: Device platform
+      responses:
+        '200':
+          description: Device registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        description: Device registration ID
+                      platform:
+                        type: string
+                        description: Device platform
+        '400':
+          description: Device token required
+        '401':
+          description: Authentication required
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token obtained from /api/auth/login
+
+  schemas:
+    User:
+      type: object
+      properties:
+        uuid:
+          type: string
+          format: uuid
+          description: Unique user identifier
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        username:
+          type: string
+          description: Unique username
+          example: "john_doe"
+        fullName:
+          type: string
+          description: User's full name
+          example: "John Doe"
+        email:
+          type: string
+          format: email
+          description: User's email address
+          example: "john.doe@example.com"
+        createdAt:
+          type: string
+          format: date-time
+          description: User creation timestamp
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last update timestamp
+      required: [uuid, username, fullName, email]
+
+    Group:
+      type: object
+      properties:
+        _id:
+          type: string
+          description: MongoDB document ID
+        name:
+          type: string
+          description: Group name
+          example: "My Friends Group"
+        description:
+          type: string
+          description: Group description
+          example: "A group for my close friends"
+        creatorId:
+          type: string
+          format: uuid
+          description: UUID of group creator
+        members:
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: Array of member UUIDs
+        createdAt:
+          type: string
+          format: date-time
+          description: Group creation timestamp
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last update timestamp
+      required: [name, creatorId, members]
+
+    Newsflash:
+      type: object
+      properties:
+        _id:
+          type: string
+          description: MongoDB document ID
+        authorId:
+          type: string
+          format: uuid
+          description: UUID of newsflash author
+        content:
+          type: string
+          description: Newsflash content
+          example: "Hello friends! This is my newsflash."
+        targetType:
+          type: string
+          enum: [friends, group]
+          description: Who can see this newsflash
+        targetId:
+          type: string
+          format: uuid
+          description: Group ID if targetType is 'group'
+        isDeleted:
+          type: boolean
+          description: Soft delete flag
+        createdAt:
+          type: string
+          format: date-time
+          description: Creation timestamp
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last update timestamp
+      required: [authorId, content, targetType]
+
+    NewsflashWithAuthor:
+      allOf:
+        - $ref: '#/components/schemas/Newsflash'
+        - type: object
+          properties:
+            author:
+              $ref: '#/components/schemas/User'
+
+    FriendshipRequest:
+      type: object
+      properties:
+        _id:
+          type: string
+          description: MongoDB document ID
+        user1Id:
+          type: string
+          format: uuid
+          description: UUID of request sender
+        user2Id:
+          type: string
+          format: uuid
+          description: UUID of request recipient
+        status:
+          type: string
+          enum: [pending, accepted, rejected]
+          description: Request status
+        createdAt:
+          type: string
+          format: date-time
+          description: Request creation timestamp
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last update timestamp
+
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          description: Current page number
+          example: 1
+        limit:
+          type: integer
+          description: Items per page
+          example: 20
+        total:
+          type: integer
+          description: Total number of items
+          example: 150
+        totalPages:
+          type: integer
+          description: Total number of pages
+          example: 8
+      required: [page, limit, total, totalPages]
+
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          description: Response data
+        message:
+          type: string
+          description: Success message
+      required: [success]
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          description: Error message
+        error:
+          type: string
+          description: Error type
+        statusCode:
+          type: integer
+          description: HTTP status code
+      required: [success, message]
+
+tags:
+  - name: Health
+    description: Server health and status endpoints
+  - name: Users
+    description: User management endpoints
+  - name: Authentication
+    description: User authentication endpoints
+  - name: Friendships
+    description: Friend management endpoints
+  - name: Groups
+    description: Group management endpoints
+  - name: Newsflashes
+    description: Newsflash management endpoints
+  - name: Notifications
+    description: Push notification endpoints
