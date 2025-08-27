@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const logger = require('../services/utils/logger');
 
 const connectDB = async () => {
   try {
@@ -10,13 +11,21 @@ const connectDB = async () => {
     
     await mongoose.connect(mongoURI);
     
-    console.log('MongoDB Atlas connected successfully');
+    logger.info('SYSTEM', 'MongoDB Atlas connected successfully');
   } catch (error) {
-    console.error('MongoDB connection error:', error.message);
-    console.log('\nTo fix this:');
-    console.log('1. Set MONGODB_URI environment variable with your Atlas connection string');
-    console.log('2. Make sure your IP is whitelisted in Atlas Network Access');
-    console.log('3. Verify your database user credentials');
+    logger.error('SYSTEM', 'MongoDB connection failed', {
+      error: error.message,
+      action: 'database_connection'
+    });
+    
+    logger.info('SYSTEM', 'Database connection troubleshooting steps', {
+      steps: [
+        'Set MONGODB_URI environment variable with your Atlas connection string',
+        'Make sure your IP is whitelisted in Atlas Network Access',
+        'Verify your database user credentials'
+      ]
+    });
+    
     process.exit(1);
   }
 };
@@ -24,9 +33,12 @@ const connectDB = async () => {
 const disconnectDB = async () => {
   try {
     await mongoose.disconnect();
-    console.log('MongoDB disconnected successfully');
+    logger.info('SYSTEM', 'MongoDB disconnected successfully');
   } catch (error) {
-    console.error('MongoDB disconnection error:', error.message);
+    logger.error('SYSTEM', 'MongoDB disconnection failed', {
+      error: error.message,
+      action: 'database_disconnection'
+    });
   }
 };
 

@@ -1,5 +1,19 @@
+const logger = require('../services/utils/logger');
+
 const errorHandler = (err, req, res, next) => {
-  console.error('Error:', err);
+  // Log error with context
+  logger.error('SYSTEM', 'Unhandled error occurred', {
+    error: {
+      message: err.message,
+      name: err.name,
+      stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+    },
+    request: {
+      method: req.method,
+      url: req.originalUrl,
+      userId: req.user?.uuid
+    }
+  });
 
   // Default error
   let statusCode = err.statusCode || 500;

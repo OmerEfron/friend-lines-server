@@ -1,6 +1,7 @@
 const User = require('../models/User');
 const userValidator = require('./validators/userValidator');
 const { applyPagination } = require('./utils/paginationUtils');
+const logger = require('./utils/logger');
 
 const userService = {
   async createUser(userData) {
@@ -15,6 +16,11 @@ const userService = {
     });
     
     if (existingUser) {
+      logger.warn('USER_AUTH', 'User registration failed - duplicate credentials', {
+        username,
+        email,
+        reason: 'duplicate_credentials'
+      });
       throw new Error('Username or email already exists');
     }
     
@@ -27,6 +33,12 @@ const userService = {
     });
     
     await user.save();
+    
+    logger.info('USER_AUTH', 'User registered successfully', {
+      userId: user.uuid,
+      username: user.username,
+      email: user.email
+    });
     
     // Return user without password
     return user.toSafeObject();
@@ -61,6 +73,13 @@ const userService = {
     
     // Apply pagination
     const paginatedResults = applyPagination(users, page, limit);
+    
+    logger.info('USER_AUTH', 'User search completed', {
+      query: searchTerm,
+      results: total,
+      page,
+      limit
+    });
     
     return {
       users: paginatedResults.items,
