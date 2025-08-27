@@ -86,8 +86,8 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           # Use registry cache instead of GHA cache for better compatibility
-          cache-from: type=registry,ref=ghcr.io/${{ env.IMAGE_NAME }}:buildcache
-          cache-to: type=registry,ref=ghcr.io/${{ env.IMAGE_NAME }}:buildcache,mode=max
+          # cache-from: type=registry,ref=ghcr.io/${{ env.IMAGE_NAME }}:buildcache
+          # cache-to: type=registry,ref=ghcr.io/${{ env.IMAGE_NAME }}:buildcache,mode=max
 
   deploy:
     needs: build-and-push
