@@ -1,4 +1,5 @@
 const express = require('express');
+const path = require('path');
 const { connectDB } = require('./config/database');
 const requestLogger = require('./middlewares/requestLogger');
 const healthRoutes = require('./routes/healthRoutes');
@@ -25,6 +26,9 @@ app.use(express.urlencoded({ extended: true }));
 // Request logging middleware (must be early to capture all requests)
 app.use(requestLogger);
 
+// Serve static files (API documentation)
+app.use(express.static('public'));
+
 // Routes
 app.use('/api', healthRoutes);
 app.use('/api/users', userRoutes);
@@ -33,6 +37,11 @@ app.use('/api/friendships', friendshipRoutes);
 app.use('/api/groups', groupRoutes);
 app.use('/api/newsflashes', newsflashRoutes);
 app.use('/api/notifications', notificationRoutes);
+
+// Root route - serve API documentation
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
 
 // Error handler middleware (must be last)
 app.use(errorHandler);

@@ -1,0 +1,219 @@
+{
+  "api": {
+    "name": "Friend Lines API",
+    "version": "1.0.0",
+    "baseUrl": "https://friend-lines-server.onrender.com",
+    "description": "Social networking API for friends, groups, and newsflashes",
+    "endpoints": {
+      "health": {
+        "GET /api/health": {
+          "description": "Check server health",
+          "auth": false,
+          "response": "Server status and uptime"
+        }
+      },
+      "authentication": {
+        "POST /api/auth/login": {
+          "description": "User login",
+          "auth": false,
+          "body": {
+            "username": "string",
+            "password": "string"
+          },
+          "response": "User data and JWT token"
+        }
+      },
+      "users": {
+        "POST /api/users/register": {
+          "description": "User registration",
+          "auth": false,
+          "body": {
+            "username": "string (3-30 chars)",
+            "fullName": "string (max 100 chars)",
+            "email": "string (valid email)",
+            "password": "string (min 6 chars)"
+          },
+          "response": "Created user data"
+        },
+        "GET /api/users/search": {
+          "description": "Search users",
+          "auth": true,
+          "query": {
+            "q": "string (search term)",
+            "page": "number (default: 1)",
+            "limit": "number (default: 20)"
+          },
+          "response": "User list with pagination"
+        }
+      },
+      "friendships": {
+        "POST /api/friendships/request": {
+          "description": "Send friend request",
+          "auth": true,
+          "body": {
+            "friendId": "string (target user UUID)"
+          },
+          "response": "Request status"
+        },
+        "POST /api/friendships/accept": {
+          "description": "Accept friend request",
+          "auth": true,
+          "body": {
+            "friendId": "string (sender user UUID)"
+          },
+          "response": "Acceptance status"
+        },
+        "GET /api/friendships/list": {
+          "description": "Get friends list",
+          "auth": true,
+          "response": "List of current friends"
+        },
+        "GET /api/friendships/requests": {
+          "description": "Get pending requests",
+          "auth": true,
+          "response": "List of pending friend requests"
+        },
+        "DELETE /api/friendships/:friendId": {
+          "description": "Delete friendship",
+          "auth": true,
+          "response": "Deletion status"
+        }
+      },
+      "groups": {
+        "POST /api/groups/create": {
+          "description": "Create group",
+          "auth": true,
+          "body": {
+            "name": "string",
+            "description": "string"
+          },
+          "response": "Created group data"
+        },
+        "POST /api/groups/invite": {
+          "description": "Invite user to group",
+          "auth": true,
+          "body": {
+            "groupId": "string",
+            "invitedUserId": "string"
+          },
+          "response": "Invitation status"
+        },
+        "POST /api/groups/join": {
+          "description": "Accept group invitation",
+          "auth": true,
+          "body": {
+            "groupId": "string"
+          },
+          "response": "Join status"
+        },
+        "GET /api/groups/my-groups": {
+          "description": "Get user's groups",
+          "auth": true,
+          "response": "List of user's groups"
+        },
+        "GET /api/groups/invitations": {
+          "description": "Get group invitations",
+          "auth": true,
+          "response": "List of pending group invitations"
+        },
+        "GET /api/groups/:groupId/members": {
+          "description": "Get group members",
+          "auth": true,
+          "response": "List of group members"
+        },
+        "DELETE /api/groups/:groupId/leave": {
+          "description": "Leave group",
+          "auth": true,
+          "response": "Leave status"
+        }
+      },
+      "newsflashes": {
+        "POST /api/newsflashes/create": {
+          "description": "Create newsflash",
+          "auth": true,
+          "body": {
+            "content": "string (max 100 chars)",
+            "targetType": "string (friends|group)",
+            "targetId": "string (group ID if targetType is group)"
+          },
+          "response": "Created newsflash data"
+        },
+        "GET /api/newsflashes/my-feed": {
+          "description": "Get user's newsfeed",
+          "auth": true,
+          "query": {
+            "page": "number (default: 1)",
+            "limit": "number (default: 20)"
+          },
+          "response": "Newsflash list with pagination"
+        },
+        "GET /api/newsflashes/author/:authorId": {
+          "description": "Get newsflashes by author",
+          "auth": true,
+          "query": {
+            "page": "number (default: 1)",
+            "limit": "number (default: 20)"
+          },
+          "response": "Author's newsflashes with pagination"
+        },
+        "GET /api/newsflashes/group/:groupId": {
+          "description": "Get group newsflashes",
+          "auth": true,
+          "query": {
+            "page": "number (default: 1)",
+            "limit": "number (default: 20)"
+          },
+          "response": "Group newsflashes with pagination"
+        },
+        "DELETE /api/newsflashes/:newsflashId": {
+          "description": "Delete newsflash",
+          "auth": true,
+          "response": "Deletion status"
+        }
+      },
+      "notifications": {
+        "POST /api/notifications/register-device": {
+          "description": "Register device for push notifications",
+          "auth": true,
+          "body": {
+            "deviceToken": "string (FCM token)",
+            "platform": "string (ios|android|web)"
+          },
+          "response": "Device registration status"
+        },
+        "GET /api/notifications/history": {
+          "description": "Get notification history",
+          "auth": true,
+          "response": "List of notifications"
+        }
+      }
+    },
+    "authentication": {
+      "type": "JWT Bearer Token",
+      "header": "Authorization: Bearer <token>",
+      "note": "Most endpoints require authentication. Get token from /api/auth/login"
+    },
+    "pagination": {
+      "defaultPage": 1,
+      "defaultLimit": 20,
+      "maxLimit": 100,
+      "response": {
+        "page": "current page number",
+        "limit": "items per page",
+        "total": "total number of items",
+        "totalPages": "total number of pages"
+      }
+    },
+    "errorResponses": {
+      "400": "Bad Request - Validation error or invalid data",
+      "401": "Unauthorized - Authentication required or invalid token",
+      "403": "Forbidden - Insufficient permissions",
+      "404": "Not Found - Resource not found",
+      "500": "Internal Server Error - Server error"
+    },
+    "rateLimiting": {
+      "note": "Rate limiting may apply to prevent abuse",
+      "recommendation": "Implement exponential backoff for retries"
+    }
+  }
+}

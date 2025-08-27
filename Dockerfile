@@ -38,6 +38,9 @@ RUN npm ci --only=production && npm cache clean --force
 # Copy built application from builder stage
 COPY --from=builder --chown=nodejs:nodejs /app ./
 
+# Ensure public directory exists and has correct permissions
+RUN mkdir -p public && chown -R nodejs:nodejs public
+
 # Create necessary directories
 RUN mkdir -p logs && chown -R nodejs:nodejs logs
 

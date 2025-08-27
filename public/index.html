@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Friend Lines API Documentation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f8f9fa;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px 20px;
+            text-align: center;
+            margin-bottom: 30px;
+            border-radius: 10px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .api-section {
+            background: white;
+            margin-bottom: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .section-header {
+            background: #f8f9fa;
+            padding: 20px;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .section-header h2 {
+            color: #495057;
+            font-size: 1.5rem;
+        }
+
+        .endpoint {
+            padding: 20px;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .endpoint:last-child {
+            border-bottom: none;
+        }
+
+        .method {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 0.9rem;
+            margin-right: 10px;
+        }
+
+        .method.get { background: #28a745; color: white; }
+        .method.post { background: #007bff; color: white; }
+        .method.put { background: #ffc107; color: #212529; }
+        .method.delete { background: #dc3545; color: white; }
+
+        .endpoint-url {
+            font-family: 'Monaco', 'Menlo', monospace;
+            background: #f8f9fa;
+            padding: 8px 12px;
+            border-radius: 4px;
+            color: #495057;
+            font-size: 0.9rem;
+        }
+
+        .endpoint-description {
+            margin: 15px 0;
+            color: #6c757d;
+        }
+
+        .example {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+
+        .example h4 {
+            margin-bottom: 10px;
+            color: #495057;
+        }
+
+        .code-block {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 4px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 0.9rem;
+            overflow-x: auto;
+        }
+
+        .response {
+            margin-top: 15px;
+        }
+
+        .response h4 {
+            margin-bottom: 10px;
+            color: #495057;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+
+        .status-200 { background: #d4edda; color: #155724; }
+        .status-400 { background: #f8d7da; color: #721c24; }
+        .status-401 { background: #fff3cd; color: #856404; }
+        .status-500 { background: #f8d7da; color: #721c24; }
+
+        .toc {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .toc h2 {
+            margin-bottom: 15px;
+            color: #495057;
+        }
+
+        .toc ul {
+            list-style: none;
+        }
+
+        .toc li {
+            margin: 8px 0;
+        }
+
+        .toc a {
+            color: #007bff;
+            text-decoration: none;
+            padding: 5px 0;
+            display: block;
+        }
+
+        .toc a:hover {
+            text-decoration: underline;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 30px;
+            color: #6c757d;
+            border-top: 1px solid #e9ecef;
+            margin-top: 30px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .endpoint-url {
+                font-size: 0.8rem;
+                word-break: break-all;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Friend Lines API</h1>
+            <p>Complete API documentation with examples</p>
+        </div>
+
+        <div class="toc">
+            <h2>📚 Table of Contents</h2>
+            <ul>
+                <li><a href="#health">Health Check</a></li>
+                <li><a href="#authentication">Authentication</a></li>
+                <li><a href="#users">Users</a></li>
+                <li><a href="#friendships">Friendships</a></li>
+                <li><a href="#groups">Groups</a></li>
+                <li><a href="#newsflashes">Newsflashes</a></li>
+                <li><a href="#notifications">Notifications</a></li>
+            </ul>
+        </div>
+
+        <!-- Health Check -->
+        <div class="api-section" id="health">
+            <div class="section-header">
+                <h2>🏥 Health Check</h2>
+            </div>
+            <div class="endpoint">
+                <span class="method get">GET</span>
+                <span class="endpoint-url">/api/health</span>
+                <div class="endpoint-description">
+                    Check if the server is running and healthy.
+                </div>
+                <div class="example">
+                    <h4>Example Request:</h4>
+                    <div class="code-block">curl -X GET "https://friend-lines-server.onrender.com/api/health"</div>
+                </div>
+                <div class="response">
+                    <h4>Response <span class="status-badge status-200">200 OK</span></h4>
+                    <div class="code-block">{
+  "status": "healthy",
+  "timestamp": "2025-08-27T18:53:05.256Z",
+  "uptime": 135.152410969,
+  "environment": "production"
+}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Authentication -->
+        <div class="api-section" id="authentication">
+            <div class="section-header">
+                <h2>🔐 Authentication</h2>
+            </div>
+            
+            <div class="endpoint">
+                <span class="method post">POST</span>
+                <span class="endpoint-url">/api/auth/login</span>
+                <div class="endpoint-description">
+                    Authenticate a user and receive a JWT token.
+                </div>
+                <div class="example">
+                    <h4>Example Request:</h4>
+                    <div class="code-block">curl -X POST "https://friend-lines-server.onrender.com/api/auth/login" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username": "yourusername",
+    "password": "yourpassword"
+  }'</div>
+                </div>
+                <div class="response">
+                    <h4>Response <span class="status-badge status-200">200 OK</span></h4>
+                    <div class="code-block">{
+  "success": true,
+  "data": {
+    "user": {
+      "username": "yourusername",
+      "fullName": "Your Name",
+      "email": "your@email.com",
+      "uuid": "user-uuid-here"
+    },
+    "token": "jwt-token-here"
+  }
+}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Users -->
+        <div class="api-section" id="users">
+            <div class="section-header">
+                <h2>👥 Users</h2>
+            </div>
+            
+            <div class="endpoint">
+                <span class="method post">POST</span>
+                <span class="endpoint-url">/api/users/register</span>
+                <div class="endpoint-description">
+                    Register a new user account.
+                </div>
+                <div class="example">
+                    <h4>Example Request:</h4>
+                    <div class="code-block">curl -X POST "https://friend-lines-server.onrender.com/api/users/register" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username": "newuser",
+    "fullName": "New User",
+    "email": "newuser@example.com",
+    "password": "securepassword123"
+  }'</div>
+                </div>
+                <div class="response">
+                    <h4>Response <span class="status-badge status-200">200 OK</span></h4>
+                    <div class="code-block">{
+  "success": true,
+  "data": {
+    "user": {
+      "username": "newuser",
+      "fullName": "New User",
+      "email": "newuser@example.com",
+      "uuid": "generated-uuid",
+      "createdAt": "2025-08-27T18:53:10.654Z"
+    }
+  }
+}</div>
+                </div>
+            </div>
+
+            <div class="endpoint">
+                <span class="method get">GET</span>
+                <span class="endpoint-url">/api/users/search?q=searchterm&page=1&limit=20</span>
+                <div class="endpoint-description">
+                    Search for users by username, full name, or email. Requires authentication.
+                </div>
+                <div class="example">
+                    <h4>Example Request:</h4>
+                    <div class="code-block">curl -X GET "https://friend-lines-server.onrender.com/api/users/search?q=john&page=1&limit=10" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"</div>
+                </div>
+                <div class="response">
+                    <h4>Response <span class="status-badge status-200">200 OK</span></h4>
+                    <div class="code-block">{
+  "success": true,
+  "data": {
+    "users": [
+      {
+        "username": "john_doe",
+        "fullName": "John Doe",
+        "email": "john@example.com",
+        "uuid": "user-uuid"
+      }
+    ],
+    "pagination": {
+      "page": 1,
+      "limit": 10,
+      "total": 1,
+      "totalPages": 1
+    }
+  }
+}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Friendships -->
+        <div class="api-section" id="friendships">
+            <div class="section-header">
+                <h2>🤝 Friendships</h2>
+            </div>
+            
+            <div class="endpoint">
+                <span class="method post">POST</span>
+                <span class="endpoint-url">/api/friendships/request</span>
+                <div class="endpoint-description">
+                    Send a friend request to another user. Requires authentication.
+                </div>
+                <div class="example">
+                    <h4>Example Request:</h4>
+                    <div class="code-block">curl -X POST "https://friend-lines-server.onrender.com/api/friendships/request" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "friendId": "target-user-uuid"
+  }'</div>
+                </div>
+                <div class="response">
+                    <h4>Response <span class="status-badge status-200">200 OK</span></h4>
+                    <div class="code-block">{
+  "success": true,
+  "data": {
+    "success": true,
+    "message": "Friend request sent"
+  }
+}</div>
+                </div>
+            </div>
+
+            <div class="endpoint">
+                <span class="method post">POST</span>
+                <span class="endpoint-url">/api/friendships/accept</span>
+                <div class="endpoint-description">
+                    Accept a pending friend request. Requires authentication.
+                </div>
+                <div class="example">
+                    <h4>Example Request:</h4>
+                    <div class="code-block">curl -X POST "https://friend-lines-server.onrender.com/api/friendships/accept" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "friendId": "sender-user-uuid"
+  }'</div>
+                </div>
+            </div>
+
+            <div class="endpoint">
+                <span class="method get">GET</span>
+                <span class="endpoint-url">/api/friendships/list</span>
+                <div class="endpoint-description">
+                    Get list of current friends. Requires authentication.
+                </div>
+                <div class="example">
+                    <h4>Example Request:</h4>
+                    <div class="code-block">curl -X GET "https://friend-lines-server.onrender.com/api/friendships/list" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"</div>
+                </div>
+            </div>
+
+            <div class="endpoint">
+                <span class="method get">GET</span>
+                <span class="endpoint-url">/api/friendships/requests</span>
+                <div class="endpoint-description">
+                    Get pending friend requests. Requires authentication.
+                </div>
+            </div>
+        </div>
+
+        <!-- Groups -->
+        <div class="api-section" id="groups">
+            <div class="section-header">
+                <h2>👥 Groups</h2>
+            </div>
+            
+            <div class="endpoint">
+                <span class="method post">POST</span>
+                <span class="endpoint-url">/api/groups/create</span>
+                <div class="endpoint-description">
+                    Create a new group. Requires authentication.
+                </div>
+                <div class="example">
+                    <h4>Example Request:</h4>
+                    <div class="code-block">curl -X POST "https://friend-lines-server.onrender.com/api/groups/create" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "My Group",
+    "description": "A group for my friends"
+  }'</div>
+                </div>
+            </div>
+
+            <div class="endpoint">
+                <span class="method post">POST</span>
+                <span class="endpoint-url">/api/groups/invite</span>
+                <div class="endpoint-description">
+                    Invite a user to a group. Requires authentication and group ownership.
+                </div>
+                <div class="example">
+                    <h4>Example Request:</h4>
+                    <div class="code-block">curl -X POST "https://friend-lines-server.onrender.com/api/groups/invite" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "groupId": "group-uuid",
+    "invitedUserId": "user-uuid"
+  }'</div>
+                </div>
+            </div>
+
+            <div class="endpoint">
+                <span class="method get">GET</span>
+                <span class="endpoint-url">/api/groups/my-groups</span>
+                <div class="endpoint-description">
+                    Get groups where the user is a member. Requires authentication.
+                </div>
+            </div>
+
+            <div class="endpoint">
+                <span class="method get">GET</span>
+                <span class="endpoint-url">/api/groups/invitations</span>
+                <div class="endpoint-description">
+                    Get pending group invitations. Requires authentication.
+                </div>
+            </div>
+        </div>
+
+        <!-- Newsflashes -->
+        <div class="api-section" id="newsflashes">
+            <div class="section-header">
+                <h2>📰 Newsflashes</h2>
+            </div>
+            
+            <div class="endpoint">
+                <span class="method post">POST</span>
+                <span class="endpoint-url">/api/newsflashes/create</span>
+                <div class="endpoint-description">
+                    Create a new newsflash. Requires authentication.
+                </div>
+                <div class="example">
+                    <h4>Example Request:</h4>
+                    <div class="code-block">curl -X POST "https://friend-lines-server.onrender.com/api/newsflashes/create" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "content": "Hello friends! This is my newsflash.",
+    "targetType": "friends"
+  }'</div>
+                </div>
+                <div class="response">
+                    <h4>Response <span class="status-badge status-200">200 OK</span></h4>
+                    <div class="code-block">{
+  "success": true,
+  "data": {
+    "newsflash": {
+      "authorId": "your-uuid",
+      "content": "Hello friends! This is my newsflash.",
+      "targetType": "friends",
+      "createdAt": "2025-08-27T18:53:10.654Z"
+    }
+  }
+}</div>
+                </div>
+            </div>
+
+            <div class="endpoint">
+                <span class="method get">GET</span>
+                <span class="endpoint-url">/api/newsflashes/my-feed</span>
+                <div class="endpoint-description">
+                    Get newsflashes for the authenticated user's feed. Requires authentication.
+                </div>
+                <div class="example">
+                    <h4>Example Request:</h4>
+                    <div class="code-block">curl -X GET "https://friend-lines-server.onrender.com/api/newsflashes/my-feed?page=1&limit=20" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"</div>
+                </div>
+            </div>
+
+            <div class="endpoint">
+                <span class="method get">GET</span>
+                <span class="endpoint-url">/api/newsflashes/group/:groupId</span>
+                <div class="endpoint-description">
+                    Get newsflashes for a specific group. Requires authentication and group membership.
+                </div>
+            </div>
+        </div>
+
+        <!-- Notifications -->
+        <div class="api-section" id="notifications">
+            <div class="section-header">
+                <h2>🔔 Notifications</h2>
+            </div>
+            
+            <div class="endpoint">
+                <span class="method post">POST</span>
+                <span class="endpoint-url">/api/notifications/register-device</span>
+                <div class="endpoint-description">
+                    Register a mobile device for push notifications. Requires authentication.
+                </div>
+                <div class="example">
+                    <h4>Example Request:</h4>
+                    <div class="code-block">curl -X POST "https://friend-lines-server.onrender.com/api/notifications/register-device" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "deviceToken": "fcm-device-token-here",
+    "platform": "android"
+  }'</div>
+                </div>
+                <div class="response">
+                    <h4>Response <span class="status-badge status-200">200 OK</span></h4>
+                    <div class="code-block">{
+  "success": true,
+  "message": "Device registered successfully",
+  "data": {
+    "id": "device-token-id",
+    "platform": "android"
+  }
+}</div>
+                </div>
+            </div>
+
+            <div class="endpoint">
+                <span class="method get">GET</span>
+                <span class="endpoint-url">/api/notifications/history</span>
+                <div class="endpoint-description">
+                    Get notification history. Requires authentication.
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>Friend Lines API v1.0.0 | Built with ❤️ using Express.js and MongoDB</p>
+            <p>Server Status: <span style="color: #28a745;">🟢 Online</span></p>
+        </div>
+    </div>
+</body>
+</html>
