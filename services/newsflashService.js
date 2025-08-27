@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 const Newsflash = require('../models/Newsflash');
 const newsflashValidator = require('./validators/newsflashValidator');
 const { applyPagination } = require('./utils/paginationUtils');
+const notificationService = require('./notificationService');
 
 const newsflashService = {
   async createNewsflash(newsflashData) {
@@ -19,6 +20,19 @@ const newsflashService = {
     });
     
     await newsflash.save();
+    
+    // Send notifications to relevant users
+    try {
+      await notificationService.sendNewsflashNotification(
+        newsflash.content,
+        newsflash.authorId,
+        newsflash.targetType,
+        newsflash.targetId
+      );
+    } catch (error) {
+      // Log error but don't fail the newsflash creation
+      console.error('Failed to send notification:', error.message);
+    }
     
     return newsflash;
   },

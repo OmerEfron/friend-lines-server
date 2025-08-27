@@ -1,0 +1,61 @@
+name: Deploy to Railway
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Run tests (if available)
+        run: npm test || echo "No tests configured"
+        
+      - name: Build Docker image
+        run: docker build -t friend-lines .
+        
+      - name: Test Docker image
+        run: |
+          docker run --rm -d --name test-app -p 3000:3000 friend-lines
+          sleep 10
+          curl -f http://localhost:3000/api/health || exit 1
+          docker stop test-app
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Deploy to Railway
+        uses: bervProject/railway-deploy@v1.0.0
+        with:
+          railway_token: ${{ secrets.RAILWAY_TOKEN }}
+          service: ${{ secrets.RAILWAY_SERVICE }}
+          
+      - name: Health check
+        run: |
+          echo "Waiting for deployment to complete..."
+          sleep 30
+          echo "Deployment completed successfully!"

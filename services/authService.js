@@ -15,7 +15,7 @@ const authService = {
     if (!user) {
       logger.warn('USER_AUTH', 'Login failed - user not found', {
         username,
-        ip: require('../utils/logger').getRequestContext()?.ip,
+        ip: logger.getContext()?.ip,
         reason: 'user_not_found'
       });
       throw new Error('Invalid credentials');
@@ -27,7 +27,7 @@ const authService = {
       logger.warn('USER_AUTH', 'Login failed - invalid password', {
         username,
         userId: user.uuid,
-        ip: require('../utils/logger').getRequestContext()?.ip,
+        ip: logger.getContext()?.ip,
         reason: 'invalid_password'
       });
       throw new Error('Invalid credentials');
@@ -40,11 +40,11 @@ const authService = {
       { expiresIn: '24h' }
     );
     
-    logger.info('USER_AUTH', 'User login successful', {
+        logger.info('USER_AUTH', 'User login successful', {
       userId: user.uuid,
-      username: user.username,
-      ip: require('../utils/logger').getRequestContext()?.ip
-    });
+        username: user.username,
+        ip: logger.getContext()?.ip
+      });
     
     return {
       user: user.toSafeObject(),

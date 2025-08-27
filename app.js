@@ -7,6 +7,7 @@ const authRoutes = require('./routes/authRoutes');
 const friendshipRoutes = require('./routes/friendshipRoutes');
 const groupRoutes = require('./routes/groupRoutes');
 const newsflashRoutes = require('./routes/newsflashRoutes');
+const notificationRoutes = require('./routes/notificationRoutes');
 const errorHandler = require('./middlewares/errorHandler');
 require('dotenv').config();
 
@@ -31,6 +32,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/friendships', friendshipRoutes);
 app.use('/api/groups', groupRoutes);
 app.use('/api/newsflashes', newsflashRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // Error handler middleware (must be last)
 app.use(errorHandler);

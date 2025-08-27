@@ -68,6 +68,7 @@ const log = (level, category, message, data = {}) => {
 const logger = {
   // Set request context
   setContext: setRequestContext,
+  getContext: getRequestContext,
   
   // Log methods
   error: (category, message, data) => log('ERROR', category, message, data),
