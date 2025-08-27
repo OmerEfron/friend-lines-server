@@ -3,7 +3,3 @@
 # Firebase
 firebase-service-account.json
 .env
-
-# Production
-env.production.example
-railway.json

@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: friend-lines-api
+    env: docker
+    plan: free
+    region: oregon
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      - key: MONGODB_URI
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: FIREBASE_PROJECT_ID
+        value: friend-lines-notifications
+      - key: FIREBASE_SERVICE_ACCOUNT_BASE64
+        sync: false
+    autoDeploy: true
+    buildCommand: echo "Docker build handled by Dockerfile"
+    startCommand: echo "Docker start handled by Dockerfile"

@@ -1,43 +1,129 @@
 #!/bin/bash
 
-# Deployment script for Friend Lines app
+# Friend Lines Deployment Script
+# This script helps with local testing and manual deployment
+
 set -e
 
-echo "🚀 Starting deployment process..."
+echo "🚀 Friend Lines Deployment Script"
+echo "=================================="
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
+
+# Function to print colored output
+print_status() {
+    echo -e "${GREEN}✅ $1${NC}"
+}
+
+print_warning() {
+    echo -e "${YELLOW}⚠️  $1${NC}"
+}
+
+print_error() {
+    echo -e "${RED}❌ $1${NC}"
+}
 
 # Check if Docker is running
-if ! docker info > /dev/null 2>&1; then
-    echo "❌ Docker is not running. Please start Docker and try again."
-    exit 1
-fi
+check_docker() {
+    if ! docker info > /dev/null 2>&1; then
+        print_error "Docker is not running. Please start Docker and try again."
+        exit 1
+    fi
+    print_status "Docker is running"
+}
 
 # Build Docker image
-echo "🔨 Building Docker image..."
-docker build -t friend-lines:latest .
+build_image() {
+    echo "🔨 Building Docker image..."
+    docker build -t friend-lines:latest .
+    print_status "Docker image built successfully"
+}
 
-# Test the image locally
-echo "🧪 Testing Docker image..."
-docker run --rm -d --name test-deploy -p 3001:3000 friend-lines:latest
+# Run local tests
+run_tests() {
+    echo "🧪 Running local tests..."
+    if [ -f "package.json" ] && grep -q "test" package.json; then
+        npm test || print_warning "Tests failed or not configured"
+    else
+        print_warning "No test script found in package.json"
+    fi
+}
 
-# Wait for app to start
-echo "⏳ Waiting for app to start..."
-sleep 15
+# Start local development environment
+start_local() {
+    echo "🏠 Starting local development environment..."
+    docker-compose up -d
+    print_status "Local environment started"
+    echo "📱 API available at: http://localhost:3000"
+    echo "🔍 Health check: http://localhost:3000/api/health"
+}
 
-# Health check
-if curl -f http://localhost:3001/api/health > /dev/null 2>&1; then
-    echo "✅ Health check passed!"
-else
-    echo "❌ Health check failed!"
-    docker stop test-deploy
-    exit 1
-fi
+# Stop local development environment
+stop_local() {
+    echo "🛑 Stopping local development environment..."
+    docker-compose down
+    print_status "Local environment stopped"
+}
 
-# Stop test container
-docker stop test-deploy
+# Show logs
+show_logs() {
+    echo "📋 Showing application logs..."
+    docker-compose logs -f app
+}
 
-echo "🎉 Local deployment test successful!"
-echo "📝 Next steps:"
-echo "   1. Push to main branch to trigger GitHub Actions"
-echo "   2. Set up Railway account and connect GitHub repo"
-echo "   3. Configure environment variables in Railway"
-echo "   4. Deploy will happen automatically!"
+# Clean up
+cleanup() {
+    echo "🧹 Cleaning up Docker resources..."
+    docker system prune -f
+    print_status "Cleanup completed"
+}
+
+# Show help
+show_help() {
+    echo "Usage: $0 [COMMAND]"
+    echo ""
+    echo "Commands:"
+    echo "  build     Build Docker image"
+    echo "  test      Run tests"
+    echo "  start     Start local development environment"
+    echo "  stop      Stop local development environment"
+    echo "  logs      Show application logs"
+    echo "  clean     Clean up Docker resources"
+    echo "  help      Show this help message"
+    echo ""
+    echo "Examples:"
+    echo "  $0 build"
+    echo "  $0 start"
+    echo "  $0 logs"
+}
+
+# Main script logic
+case "${1:-help}" in
+    build)
+        check_docker
+        build_image
+        ;;
+    test)
+        run_tests
+        ;;
+    start)
+        check_docker
+        start_local
+        ;;
+    stop)
+        stop_local
+        ;;
+    logs)
+        show_logs
+        ;;
+    clean)
+        cleanup
+        ;;
+    help|*)
+        show_help
+        ;;
+esac

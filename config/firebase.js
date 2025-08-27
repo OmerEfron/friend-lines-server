@@ -5,8 +5,13 @@ let serviceAccount;
 
 if (process.env.FIREBASE_SERVICE_ACCOUNT_BASE64) {
   // Production: Use base64 encoded service account from environment
-  const serviceAccountJson = Buffer.from(process.env.FIREBASE_SERVICE_ACCOUNT_BASE64, 'base64').toString();
-  serviceAccount = JSON.parse(serviceAccountJson);
+  try {
+    const serviceAccountJson = Buffer.from(process.env.FIREBASE_SERVICE_ACCOUNT_BASE64, 'base64').toString();
+    serviceAccount = JSON.parse(serviceAccountJson);
+  } catch (error) {
+    console.error('Failed to parse Firebase service account from environment:', error.message);
+    process.exit(1);
+  }
 } else {
   // Development: Use local file
   try {

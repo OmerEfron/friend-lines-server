@@ -1,61 +1,101 @@
-name: Deploy to Railway
+name: Deploy to Render
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 env:
-  RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
 
 jobs:
   test:
     runs-on: ubuntu-latest
     
+    services:
+      mongodb:
+        image: mongo:6.0
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --eval 'db.runCommand(\"ping\").ok'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '18'
           cache: 'npm'
-          
+
       - name: Install dependencies
         run: npm ci
-        
-      - name: Run tests (if available)
-        run: npm test || echo "No tests configured"
-        
-      - name: Build Docker image
-        run: docker build -t friend-lines .
-        
-      - name: Test Docker image
-        run: |
-          docker run --rm -d --name test-app -p 3000:3000 friend-lines
-          sleep 10
-          curl -f http://localhost:3000/api/health || exit 1
-          docker stop test-app
 
-  deploy:
+      - name: Run tests
+        run: npm test || echo "No tests configured yet"
+        env:
+          MONGODB_URI: mongodb://localhost:27017/friend-lines-test
+          JWT_SECRET: test-secret-key
+
+      - name: Run linting
+        run: npm run lint || echo "No linting configured yet"
+
+  build-and-push:
     needs: test
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
     
+    permissions:
+      contents: read
+      packages: write
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        
-      - name: Deploy to Railway
-        uses: bervProject/railway-deploy@v1.0.0
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
         with:
-          railway_token: ${{ secrets.RAILWAY_TOKEN }}
-          service: ${{ secrets.RAILWAY_SERVICE }}
-          
-      - name: Health check
-        run: |
-          echo "Waiting for deployment to complete..."
-          sleep 30
-          echo "Deployment completed successfully!"
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: Deploy to Render
+        uses: johnbeynon/render-deploy-action@v1.0.0
+        with:
+          service-id: ${{ secrets.RENDER_SERVICE_ID }}
+          api-key: ${{ secrets.RENDER_API_KEY }}

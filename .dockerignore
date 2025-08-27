@@ -41,6 +41,9 @@ pids
 # Coverage directory used by tools like istanbul
 coverage
 
+# nyc test coverage
+.nyc_output
+
 # Dependency directories
 jspm_packages/
 
@@ -56,17 +59,30 @@ jspm_packages/
 # Yarn Integrity file
 .yarn-integrity
 
-# Docker
-Dockerfile
-.dockerignore
-docker-compose.yml
+# dotenv environment variables file
+.env
 
-# Documentation
-README.md
-docs/
+# parcel-bundler cache (https://parceljs.org/)
+.cache
+.parcel-cache
 
-# Test files
-test/
-tests/
-*.test.js
-*.spec.js
+# next.js build output
+.next
+
+# nuxt.js build output
+.nuxt
+
+# vuepress build output
+.vuepress/dist
+
+# Serverless directories
+.serverless
+
+# FuseBox cache
+.fusebox/
+
+# DynamoDB Local files
+.dynamodb/
+
+# TernJS port file
+.tern-port

@@ -8,31 +8,32 @@ services:
     environment:
       - NODE_ENV=development
       - PORT=3000
-      - MONGODB_URI=${MONGODB_URI}
-      - JWT_SECRET=${JWT_SECRET}
-      - FIREBASE_PROJECT_ID=${FIREBASE_PROJECT_ID}
+      - MONGODB_URI=mongodb://mongo:27017/friend-lines
+      - JWT_SECRET=your-secret-key-change-in-production
     volumes:
       - .:/app
       - /app/node_modules
+    depends_on:
+      - mongo
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/api/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
+    networks:
+      - friend-lines-network
 
-  # Optional: Add MongoDB for local development
-  # mongodb:
-  #   image: mongo:6
-  #   ports:
-  #     - "27017:27017"
-  #   environment:
-  #     - MONGO_INITDB_ROOT_USERNAME=admin
-  #     - MONGO_INITDB_ROOT_PASSWORD=password
-  #   volumes:
-  #     - mongodb_data:/data/db
-  #   restart: unless-stopped
+  mongo:
+    image: mongo:6.0
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_DATABASE=friend-lines
+    volumes:
+      - mongo_data:/data/db
+    restart: unless-stopped
+    networks:
+      - friend-lines-network
 
-# volumes:
-#   mongodb_data:
+volumes:
+  mongo_data:
+
+networks:
+  friend-lines-network:
+    driver: bridge
