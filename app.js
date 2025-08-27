@@ -4,6 +4,7 @@ const userRoutes = require('./routes/userRoutes');
 const authRoutes = require('./routes/authRoutes');
 const friendshipRoutes = require('./routes/friendshipRoutes');
 const groupRoutes = require('./routes/groupRoutes');
+const newsflashRoutes = require('./routes/newsflashRoutes');
 const errorHandler = require('./middlewares/errorHandler');
 
 const app = express();
@@ -19,6 +20,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/friendships', friendshipRoutes);
 app.use('/api/groups', groupRoutes);
+app.use('/api/newsflashes', newsflashRoutes);
 
 // Error handler middleware (must be last)
 app.use(errorHandler);

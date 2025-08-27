@@ -11,23 +11,27 @@ A lightweight Express.js application with a modular structure following best pra
 │   ├── userRoutes.js
 │   ├── authRoutes.js
 │   ├── friendshipRoutes.js
-│   └── groupRoutes.js
+│   ├── groupRoutes.js
+│   └── newsflashRoutes.js
 ├── controllers/          # Request handlers
 │   ├── healthController.js
 │   ├── userController.js
 │   ├── authController.js
 │   ├── friendshipController.js
-│   └── groupController.js
+│   ├── groupController.js
+│   └── newsflashController.js
 ├── services/            # Business logic
 │   ├── healthService.js
 │   ├── userService.js
 │   ├── authService.js
 │   ├── friendshipService.js
 │   ├── groupService.js
+│   ├── newsflashService.js
 │   └── validators/      # Input validation
 │       ├── userValidator.js
 │       ├── friendshipValidator.js
-│       └── groupValidator.js
+│       ├── groupValidator.js
+│       └── newsflashValidator.js
 ├── middlewares/         # Custom middleware
 │   ├── errorHandler.js
 │   └── authMiddleware.js
@@ -86,6 +90,13 @@ npm start
 - **GET** `/api/groups/:groupId/members` - Get group members
 - **GET** `/api/groups/my-groups` - Get user's groups
 - **GET** `/api/groups/invitations` - Get pending group invitations
+
+### Newsflashes
+- **POST** `/api/newsflashes/create` - Create newsflash (for friends or specific group)
+- **DELETE** `/api/newsflashes/:newsflashId` - Delete newsflash
+- **GET** `/api/newsflashes/my-feed` - Get user's personalized newsflash feed
+- **GET** `/api/newsflashes/author/:authorId` - Get newsflashes by specific author
+- **GET** `/api/newsflashes/group/:groupId` - Get newsflashes from specific group
 
 ## Environment Variables
 
