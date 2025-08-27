@@ -9,12 +9,7 @@ const newsflashController = {
       const { content, targetType, targetId } = req.body;
       const authorId = req.user.uuid;
       
-      const newsflash = await newsflashService.createNewsflash(
-        authorId, 
-        content, 
-        targetType, 
-        targetId
-      );
+      const newsflash = await newsflashService.createNewsflash({ authorId, content, targetType, targetId });
       
       res.status(201).json({
         success: true,
@@ -47,18 +42,7 @@ const newsflashController = {
       const page = parseInt(req.query.page) || 1;
       const limit = parseInt(req.query.limit) || 20;
       
-      // Get user's friends and groups
-      const userFriends = await friendshipService.getFriends(userId);
-      const userGroups = await groupService.getUserGroups(userId);
-      const userGroupIds = userGroups.map(group => group.id);
-      
-      const result = await newsflashService.getNewsflashesForUser(
-        userId, 
-        userFriends, 
-        userGroupIds,
-        page,
-        limit
-      );
+      const result = await newsflashService.getNewsflashesForUser(userId, page, limit);
       
       res.status(200).json({
         success: true,
@@ -95,7 +79,8 @@ const newsflashController = {
       
       // Check if user is a member of the group
       const groupMembers = await groupService.getGroupMembers(groupId);
-      if (!groupMembers.includes(userId)) {
+      const isMember = groupMembers.some(member => member.uuid === userId);
+      if (!isMember) {
         return res.status(403).json({
           success: false,
           error: { message: 'Access denied. Not a member of this group.' }

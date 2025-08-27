@@ -1,9 +1,5 @@
-const { v4: uuidv4 } = require('uuid');
+const Friendship = require('../models/Friendship');
 const friendshipValidator = require('./validators/friendshipValidator');
-
-// In-memory storage for friendships and requests
-const friendships = new Map(); // uuid -> Set of friend UUIDs
-const friendRequests = new Map(); // uuid -> Set of pending request UUIDs
 
 const friendshipService = {
   async sendFriendRequest(fromUserId, toUserId) {
@@ -11,42 +7,50 @@ const friendshipService = {
     friendshipValidator.validateFriendRequest(fromUserId, toUserId);
     
     // Check if already friends
-    if (friendships.has(fromUserId) && friendships.get(fromUserId).has(toUserId)) {
+    const existingFriendship = await Friendship.areFriends(fromUserId, toUserId);
+    if (existingFriendship) {
       throw new Error('Already friends');
     }
     
     // Check if request already exists
-    if (friendRequests.has(toUserId) && friendRequests.get(toUserId).has(fromUserId)) {
+    const existingRequest = await Friendship.findOne({
+      $or: [
+        { user1Id: fromUserId, user2Id: toUserId, status: 'pending' },
+        { user1Id: toUserId, user2Id: fromUserId, status: 'pending' }
+      ]
+    });
+    
+    if (existingRequest) {
       throw new Error('Friend request already sent');
     }
     
-    // Add to pending requests
-    if (!friendRequests.has(toUserId)) {
-      friendRequests.set(toUserId, new Set());
-    }
-    friendRequests.get(toUserId).add(fromUserId);
+    // Create new friend request
+    const friendship = new Friendship({
+      user1Id: fromUserId,
+      user2Id: toUserId,
+      status: 'pending'
+    });
+    
+    await friendship.save();
     
     return { success: true, message: 'Friend request sent' };
   },
   
   async acceptFriendRequest(userId, fromUserId) {
-    if (!friendRequests.has(userId) || !friendRequests.get(userId).has(fromUserId)) {
+    // Find the pending request
+    const friendship = await Friendship.findOne({
+      user2Id: userId,
+      user1Id: fromUserId,
+      status: 'pending'
+    });
+    
+    if (!friendship) {
       throw new Error('No friend request found');
     }
     
-    // Remove from pending requests
-    friendRequests.get(userId).delete(fromUserId);
-    
-    // Add to friendships for both users
-    if (!friendships.has(userId)) {
-      friendships.set(userId, new Set());
-    }
-    if (!friendships.has(fromUserId)) {
-      friendships.set(fromUserId, new Set());
-    }
-    
-    friendships.get(userId).add(fromUserId);
-    friendships.get(fromUserId).add(userId);
+    // Update status to accepted
+    friendship.status = 'accepted';
+    await friendship.save();
     
     return { success: true, message: 'Friendship accepted' };
   },
@@ -55,29 +59,31 @@ const friendshipService = {
     // Validate input data
     friendshipValidator.validateFriendshipOperation(userId, friendId);
     
-    if (!friendships.has(userId) || !friendships.get(userId).has(friendId)) {
+    // Find and delete the friendship
+    const friendship = await Friendship.findOneAndDelete({
+      $or: [
+        { user1Id: userId, user2Id: friendId, status: 'accepted' },
+        { user1Id: friendId, user2Id: userId, status: 'accepted' }
+      ]
+    });
+    
+    if (!friendship) {
       throw new Error('Friendship not found');
     }
-    
-    // Remove from both users' friendship lists
-    friendships.get(userId).delete(friendId);
-    friendships.get(friendId).delete(userId);
     
     return { success: true, message: 'Friendship deleted' };
   },
   
   async getFriends(userId) {
-    if (!friendships.has(userId)) {
-      return [];
-    }
-    return Array.from(friendships.get(userId));
+    const friendships = await Friendship.findFriends(userId);
+    return friendships.map(friendship => 
+      friendship.user1Id === userId ? friendship.user2Id : friendship.user1Id
+    );
   },
   
   async getPendingRequests(userId) {
-    if (!friendRequests.has(userId)) {
-      return [];
-    }
-    return Array.from(friendRequests.get(userId));
+    const requests = await Friendship.findPendingRequests(userId);
+    return requests.map(request => request.user1Id);
   }
 };
 

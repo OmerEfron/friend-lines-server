@@ -1,28 +1,30 @@
-const { v4: uuidv4 } = require('uuid');
+const mongoose = require('mongoose');
+const Group = require('../models/Group');
+const GroupInvitation = require('../models/GroupInvitation');
 const groupValidator = require('./validators/groupValidator');
 
-// In-memory storage for groups and invitations
-const groups = new Map(); // groupId -> group object
-const groupInvitations = new Map(); // groupId -> Set of invited user UUIDs
-const groupMembers = new Map(); // groupId -> Set of member UUIDs
-
 const groupService = {
-  async createGroup(creatorId, groupName, description = '') {
+  async createGroup(groupData, creatorId) {
     // Validate input data
-    groupValidator.validateGroupCreation({ name: groupName });
+    groupValidator.validateGroupCreation(groupData);
     
-    const groupId = uuidv4();
-    const group = {
-      id: groupId,
-      name: groupName.trim(),
-      description: description.trim(),
+    const { name, description = '' } = groupData;
+    
+    // Check if group name already exists for this creator
+    const existingGroup = await Group.findOne({ name, creatorId });
+    if (existingGroup) {
+      throw new Error('Group with this name already exists');
+    }
+    
+    // Create new group
+    const group = new Group({
+      name,
+      description,
       creatorId,
-      createdAt: new Date().toISOString(),
-      members: new Set([creatorId])
-    };
+      members: [creatorId] // Creator is automatically a member
+    });
     
-    groups.set(groupId, group);
-    groupMembers.set(groupId, new Set([creatorId]));
+    await group.save();
     
     return group;
   },
@@ -31,112 +33,125 @@ const groupService = {
     // Validate input data
     groupValidator.validateGroupInvitation(groupId, inviterId, invitedUserId);
     
-    if (!groups.has(groupId)) {
-      throw new Error('Group not found');
+    // Convert string ID to ObjectId
+    const groupObjectId = new mongoose.Types.ObjectId(groupId);
+    
+    // Check if group exists and inviter is a member
+    const group = await Group.findOne({ _id: groupObjectId, members: inviterId });
+    if (!group) {
+      throw new Error('Group not found or you are not a member');
     }
     
-    const group = groups.get(groupId);
-    if (!group.members.has(inviterId)) {
-      throw new Error('Only group members can invite others');
-    }
-    
-    if (group.members.has(invitedUserId)) {
+    // Check if user is already a member
+    if (group.members.includes(invitedUserId)) {
       throw new Error('User is already a member of this group');
     }
     
-    // Add to invitations
-    if (!groupInvitations.has(groupId)) {
-      groupInvitations.set(groupId, new Set());
+    // Check if invitation already exists
+    const existingInvitation = await GroupInvitation.findOne({
+      groupId,
+      invitedUserId,
+      status: 'pending'
+    });
+    
+    if (existingInvitation) {
+      throw new Error('Invitation already sent to this user');
     }
-    groupInvitations.get(groupId).add(invitedUserId);
+    
+    // Create invitation
+    const invitation = new GroupInvitation({
+      groupId,
+      invitedUserId,
+      inviterId
+    });
+    
+    await invitation.save();
     
     return { success: true, message: 'Invitation sent' };
   },
   
   async acceptGroupInvitation(groupId, userId) {
-    if (!groups.has(groupId)) {
-      throw new Error('Group not found');
+    // Convert string ID to ObjectId
+    const groupObjectId = new mongoose.Types.ObjectId(groupId);
+    
+    // Find the invitation
+    const invitation = await GroupInvitation.findOne({
+      groupId: groupObjectId,
+      invitedUserId: userId,
+      status: 'pending'
+    });
+    
+    if (!invitation) {
+      throw new Error('No invitation found');
     }
     
-    if (!groupInvitations.has(groupId) || !groupInvitations.get(groupId).has(userId)) {
-      throw new Error('No invitation found for this group');
+    // Accept invitation
+    await invitation.accept();
+    
+    // Add user to group
+    const group = await Group.findById(groupObjectId);
+    if (group) {
+      await group.addMember(userId);
     }
     
-    // Remove from invitations
-    groupInvitations.get(groupId).delete(userId);
-    
-    // Add to members
-    const group = groups.get(groupId);
-    group.members.add(userId);
-    
-    if (!groupMembers.has(groupId)) {
-      groupMembers.set(groupId, new Set());
-    }
-    groupMembers.get(groupId).add(userId);
-    
-    return { success: true, message: 'Joined group successfully' };
+    return { success: true, message: 'Invitation accepted' };
   },
   
   async leaveGroup(groupId, userId) {
     // Validate input data
     groupValidator.validateGroupOperation(groupId, userId);
     
-    if (!groups.has(groupId)) {
+    // Convert string ID to ObjectId
+    const groupObjectId = new mongoose.Types.ObjectId(groupId);
+    
+    const group = await Group.findById(groupObjectId);
+    if (!group) {
       throw new Error('Group not found');
     }
     
-    const group = groups.get(groupId);
-    if (!group.members.has(userId)) {
-      throw new Error('Not a member of this group');
-    }
-    
     if (group.creatorId === userId) {
-      throw new Error('Group creator cannot leave. Delete the group instead.');
+      throw new Error('Group creator cannot leave the group');
     }
     
-    // Remove from members
-    group.members.delete(userId);
-    groupMembers.get(groupId).delete(userId);
+    if (!group.members.includes(userId)) {
+      throw new Error('You are not a member of this group');
+    }
+    
+    // Remove user from group
+    await group.removeMember(userId);
     
     return { success: true, message: 'Left group successfully' };
   },
   
   async getGroupMembers(groupId) {
-    if (!groups.has(groupId)) {
+    // Convert string ID to ObjectId
+    const groupObjectId = new mongoose.Types.ObjectId(groupId);
+    
+    const group = await Group.findById(groupObjectId);
+    if (!group) {
       throw new Error('Group not found');
     }
-    return Array.from(groups.get(groupId).members);
+    
+    // Get member details by UUID
+    const memberDetails = [];
+    for (const memberUuid of group.members) {
+      const member = await require('../models/User').findOne({ uuid: memberUuid });
+      if (member) {
+        memberDetails.push(member.toSafeObject());
+      }
+    }
+    
+    return memberDetails;
   },
   
   async getUserGroups(userId) {
-    const userGroups = [];
-    for (const [groupId, group] of groups) {
-      if (group.members.has(userId)) {
-        userGroups.push({
-          id: group.id,
-          name: group.name,
-          description: group.description,
-          creatorId: group.creatorId,
-          createdAt: group.createdAt
-        });
-      }
-    }
-    return userGroups;
+    const groups = await Group.findByUser(userId);
+    return groups;
   },
   
   async getPendingInvitations(userId) {
-    const pendingInvitations = [];
-    for (const [groupId, invitedUsers] of groupInvitations) {
-      if (invitedUsers.has(userId)) {
-        const group = groups.get(groupId);
-        pendingInvitations.push({
-          groupId,
-          groupName: group.name,
-          groupDescription: group.description
-        });
-      }
-    }
-    return pendingInvitations;
+    const invitations = await GroupInvitation.findPendingForUser(userId);
+    return invitations;
   }
 };
 

@@ -8,13 +8,19 @@
     "dev": "nodemon app.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": ["express", "nodejs", "api"],
+  "keywords": [
+    "express",
+    "nodejs",
+    "api"
+  ],
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "dotenv": "^17.2.1",
     "express": "^4.18.2",
     "jsonwebtoken": "^9.0.2",
-    "bcryptjs": "^2.4.3",
+    "mongoose": "^8.18.0",
     "uuid": "^9.0.1"
   },
   "devDependencies": {

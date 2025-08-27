@@ -1,9 +1,6 @@
-const { v4: uuidv4 } = require('uuid');
-const bcrypt = require('bcryptjs');
+const User = require('../models/User');
 const userValidator = require('./validators/userValidator');
-
-// In-memory database
-const users = new Map();
+const { applyPagination } = require('./utils/paginationUtils');
 
 const userService = {
   async createUser(userData) {
@@ -13,80 +10,71 @@ const userService = {
     const { username, fullName, email, password } = userData;
     
     // Check if user already exists
-    for (const user of users.values()) {
-      if (user.username === username || user.email === email) {
-        throw new Error('Username or email already exists');
-      }
+    const existingUser = await User.findOne({
+      $or: [{ username }, { email }]
+    });
+    
+    if (existingUser) {
+      throw new Error('Username or email already exists');
     }
     
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 10);
-    
-    const user = {
-      uuid: uuidv4(),
+    // Create new user (password will be hashed by the model pre-save hook)
+    const user = new User({
       username,
       fullName,
       email,
-      password: hashedPassword,
-      createdAt: new Date().toISOString()
-    };
+      password
+    });
     
-    users.set(user.uuid, user);
+    await user.save();
     
     // Return user without password
-    const { password: _, ...userWithoutPassword } = user;
-    return userWithoutPassword;
+    return user.toSafeObject();
   },
   
   async findUserByUsername(username) {
-    for (const user of users.values()) {
-      if (user.username === username) {
-        return user;
-      }
-    }
-    return null;
+    const user = await User.findOne({ username });
+    return user;
   },
   
   async findUserByUuid(uuid) {
-    const user = users.get(uuid);
+    const user = await User.findOne({ uuid });
     if (user) {
-      const { password: _, ...userWithoutPassword } = user;
-      return userWithoutPassword;
+      return user.toSafeObject();
     }
     return null;
   },
   
   async searchUsers(query, page = 1, limit = 20) {
-    const searchResults = [];
     const searchTerm = query.toLowerCase().trim();
     
-    for (const user of users.values()) {
-      if (user.username.toLowerCase().includes(searchTerm) || 
-          user.fullName.toLowerCase().includes(searchTerm) ||
-          user.email.toLowerCase().includes(searchTerm)) {
-        const { password: _, ...userWithoutPassword } = user;
-        searchResults.push(userWithoutPassword);
-      }
-    }
+    const searchQuery = {
+      $or: [
+        { username: { $regex: searchTerm, $options: 'i' } },
+        { fullName: { $regex: searchTerm, $options: 'i' } },
+        { email: { $regex: searchTerm, $options: 'i' } }
+      ]
+    };
+    
+    const users = await User.find(searchQuery).select('-password');
+    const total = await User.countDocuments(searchQuery);
     
     // Apply pagination
-    const startIndex = (page - 1) * limit;
-    const endIndex = startIndex + limit;
-    const paginatedResults = searchResults.slice(startIndex, endIndex);
+    const paginatedResults = applyPagination(users, page, limit);
     
     return {
-      users: paginatedResults,
+      users: paginatedResults.items,
       pagination: {
         page,
         limit,
-        total: searchResults.length,
-        totalPages: Math.ceil(searchResults.length / limit)
+        total,
+        totalPages: paginatedResults.pagination.totalPages
       }
     };
   },
   
   async validatePassword(user, password) {
-    return bcrypt.compare(password, user.password);
+    return user.comparePassword(password);
   }
 };
 

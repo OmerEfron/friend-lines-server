@@ -1,4 +1,5 @@
 const express = require('express');
+const { connectDB } = require('./config/database');
 const healthRoutes = require('./routes/healthRoutes');
 const userRoutes = require('./routes/userRoutes');
 const authRoutes = require('./routes/authRoutes');
@@ -6,9 +7,14 @@ const friendshipRoutes = require('./routes/friendshipRoutes');
 const groupRoutes = require('./routes/groupRoutes');
 const newsflashRoutes = require('./routes/newsflashRoutes');
 const errorHandler = require('./middlewares/errorHandler');
+require('dotenv').config();
+
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Connect to MongoDB
+connectDB();
 
 // Middleware order: body parsers, custom middleware, routes, error handlers
 app.use(express.json());

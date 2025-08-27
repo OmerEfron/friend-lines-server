@@ -1,36 +1,24 @@
-const { v4: uuidv4 } = require('uuid');
+const mongoose = require('mongoose');
+const Newsflash = require('../models/Newsflash');
 const newsflashValidator = require('./validators/newsflashValidator');
 const { applyPagination } = require('./utils/paginationUtils');
 
-// In-memory storage for newsflashes
-const newsflashes = new Map(); // newsflashId -> newsflash object
-const groupNewsflashes = new Map(); // groupId -> Set of newsflash IDs
-
 const newsflashService = {
-  async createNewsflash(authorId, content, targetType, targetId = null) {
+  async createNewsflash(newsflashData) {
     // Validate input data
-    newsflashValidator.validateNewsflashCreation({ content, targetType, targetId });
+    newsflashValidator.validateNewsflashCreation(newsflashData);
     
-    const newsflashId = uuidv4();
-    const newsflash = {
-      id: newsflashId,
+    const { authorId, content, targetType, targetId } = newsflashData;
+    
+    // Create new newsflash
+    const newsflash = new Newsflash({
       authorId,
-      content: content.trim(),
-      targetType, // 'friends' or 'group'
-      targetId, // group ID if targetType is 'group', null if 'friends'
-      createdAt: new Date().toISOString(),
-      isDeleted: false
-    };
+      content,
+      targetType,
+      targetId
+    });
     
-    newsflashes.set(newsflashId, newsflash);
-    
-    // If it's for a specific group, add to group newsflashes
-    if (targetType === 'group' && targetId) {
-      if (!groupNewsflashes.has(targetId)) {
-        groupNewsflashes.set(targetId, new Set());
-      }
-      groupNewsflashes.get(targetId).add(newsflashId);
-    }
+    await newsflash.save();
     
     return newsflash;
   },
@@ -39,105 +27,87 @@ const newsflashService = {
     // Validate input data
     newsflashValidator.validateNewsflashOperation(newsflashId, userId);
     
-    const newsflash = newsflashes.get(newsflashId);
+    // Find the newsflash
+    const newsflash = await Newsflash.findById(newsflashId);
     if (!newsflash) {
       throw new Error('Newsflash not found');
     }
     
+    // Check if user is the author
     if (newsflash.authorId !== userId) {
-      throw new Error('Only the author can delete a newsflash');
+      throw new Error('Only the author can delete this newsflash');
     }
     
     // Soft delete
-    newsflash.isDeleted = true;
-    
-    // Remove from group newsflashes if it was in a group
-    if (newsflash.targetType === 'group' && newsflash.targetId) {
-      const groupNews = groupNewsflashes.get(newsflash.targetId);
-      if (groupNews) {
-        groupNews.delete(newsflashId);
-      }
-    }
+    await newsflash.softDelete();
     
     return { success: true, message: 'Newsflash deleted successfully' };
   },
   
-  async getNewsflashesForUser(userId, userFriends, userGroups, page = 1, limit = 20) {
-    const userNewsflashes = [];
+  async getNewsflashesForUser(userId, page = 1, limit = 20) {
+    // Validate pagination
+    newsflashValidator.validatePagination(page, limit);
     
-    // Get newsflashes for all friends (public to friends)
-    for (const newsflash of newsflashes.values()) {
-      if (newsflash.isDeleted) continue;
-      
-      if (newsflash.targetType === 'friends') {
-        userNewsflashes.push(newsflash);
-      }
-    }
-    
-    // Get newsflashes from user's groups
-    for (const groupId of userGroups) {
-      const groupNews = groupNewsflashes.get(groupId);
-      if (groupNews) {
-        for (const newsflashId of groupNews) {
-          const newsflash = newsflashes.get(newsflashId);
-          if (newsflash && !newsflash.isDeleted) {
-            userNewsflashes.push(newsflash);
-          }
-        }
-      }
-    }
-    
-    // Sort by creation date (newest first)
-    const sortedNewsflashes = userNewsflashes.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    // Get newsflashes for friends (public to friends)
+    const friendsNewsflashes = await Newsflash.findForFriends();
     
     // Apply pagination
-    const result = applyPagination(sortedNewsflashes, page, limit);
-    result.newsflashes = result.items;
-    delete result.items;
+    const paginatedResults = applyPagination(friendsNewsflashes, page, limit);
     
-    return result;
+    return {
+      newsflashes: paginatedResults.items,
+      pagination: {
+        page,
+        limit,
+        total: paginatedResults.pagination.total,
+        totalPages: paginatedResults.pagination.totalPages
+      }
+    };
   },
   
   async getNewsflashesByAuthor(authorId, page = 1, limit = 20) {
-    const authorNewsflashes = [];
+    // Validate pagination
+    newsflashValidator.validatePagination(page, limit);
     
-    for (const newsflash of newsflashes.values()) {
-      if (newsflash.authorId === authorId && !newsflash.isDeleted) {
-        authorNewsflashes.push(newsflash);
-      }
-    }
-    
-    const sortedNewsflashes = authorNewsflashes.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    // Get newsflashes by author
+    const newsflashes = await Newsflash.findByAuthor(authorId);
     
     // Apply pagination
-    const result = applyPagination(sortedNewsflashes, page, limit);
-    result.newsflashes = result.items;
-    delete result.items;
+    const paginatedResults = applyPagination(newsflashes, page, limit);
     
-    return result;
+    return {
+      newsflashes: paginatedResults.items,
+      pagination: {
+        page,
+        limit,
+        total: paginatedResults.pagination.total,
+        totalPages: paginatedResults.pagination.totalPages
+      }
+    };
   },
   
   async getNewsflashesByGroup(groupId, page = 1, limit = 20) {
-    const groupNewsflashesList = [];
-    const groupNews = groupNewsflashes.get(groupId);
+    // Validate pagination
+    newsflashValidator.validatePagination(page, limit);
     
-    if (groupNews) {
-      for (const newsflashId of groupNews) {
-        const newsflash = newsflashes.get(newsflashId);
-        if (newsflash && !newsflash.isDeleted) {
-          groupNewsflashesList.push(newsflash);
-        }
-      }
-    }
+    // Convert string ID to ObjectId
+    const groupObjectId = new mongoose.Types.ObjectId(groupId);
     
-    const sortedNewsflashes = groupNewsflashesList.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    // Get newsflashes for a specific group
+    const newsflashes = await Newsflash.findForGroup(groupObjectId);
     
     // Apply pagination
-    const result = applyPagination(sortedNewsflashes, page, limit);
-    result.newsflashes = result.items;
-    delete result.items;
+    const paginatedResults = applyPagination(newsflashes, page, limit);
     
-    return result;
+    return {
+      newsflashes: paginatedResults.items,
+      pagination: {
+        page,
+        limit,
+        total: paginatedResults.pagination.total,
+        totalPages: paginatedResults.pagination.totalPages
+      }
+    };
   }
 };
 

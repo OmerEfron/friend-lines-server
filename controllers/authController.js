@@ -5,7 +5,7 @@ const authController = {
     try {
       const { username, password } = req.body;
       
-      const result = await authService.login(username, password);
+      const result = await authService.login({ username, password });
       
       res.status(200).json({
         success: true,

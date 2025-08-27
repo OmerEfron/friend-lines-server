@@ -4,7 +4,7 @@ const userService = require('../services/userService');
 const friendshipController = {
   async sendFriendRequest(req, res, next) {
     try {
-      const { targetUserId } = req.body;
+      const { friendId: targetUserId } = req.body;
       const fromUserId = req.user.uuid;
       
       const result = await friendshipService.sendFriendRequest(fromUserId, targetUserId);

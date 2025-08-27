@@ -6,7 +6,7 @@ const groupController = {
       const { name, description } = req.body;
       const creatorId = req.user.uuid;
       
-      const group = await groupService.createGroup(creatorId, name, description);
+      const group = await groupService.createGroup({ name, description }, creatorId);
       
       res.status(201).json({
         success: true,

@@ -1,54 +1,53 @@
 const jwt = require('jsonwebtoken');
-const userService = require('./userService');
+const User = require('../models/User');
 const userValidator = require('./validators/userValidator');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
-const JWT_EXPIRES_IN = '24h';
-
 const authService = {
-  async login(username, password) {
+  async login(credentials) {
     // Validate input data
-    userValidator.validateLogin({ username, password });
+    userValidator.validateLogin(credentials);
     
-    const user = await userService.findUserByUsername(username);
+    const { username, password } = credentials;
+    
+    // Find user by username
+    const user = await User.findOne({ username });
     if (!user) {
       throw new Error('Invalid credentials');
     }
     
-    const isValidPassword = await userService.validatePassword(user, password);
+    // Validate password
+    const isValidPassword = await user.comparePassword(password);
     if (!isValidPassword) {
       throw new Error('Invalid credentials');
     }
     
+    // Generate JWT token
     const token = jwt.sign(
       { uuid: user.uuid, username: user.username },
-      JWT_SECRET,
-      { expiresIn: JWT_EXPIRES_IN }
+      process.env.JWT_SECRET || 'your-secret-key',
+      { expiresIn: '24h' }
     );
     
-    const { password: _, ...userWithoutPassword } = user;
-    
     return {
-      user: userWithoutPassword,
+      user: user.toSafeObject(),
       token
     };
   },
   
   verifyToken(token) {
     try {
-      return jwt.verify(token, JWT_SECRET);
+      return jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
     } catch (error) {
       throw new Error('Invalid token');
     }
   },
   
-  async getCurrentUser(token) {
-    const decoded = this.verifyToken(token);
-    const user = await userService.findUserByUuid(decoded.uuid);
+  async getCurrentUser(uuid) {
+    const user = await User.findOne({ uuid });
     if (!user) {
       throw new Error('User not found');
     }
-    return user;
+    return user.toSafeObject();
   }
 };
 
