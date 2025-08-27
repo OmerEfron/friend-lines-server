@@ -89,14 +89,6 @@ jobs:
           # cache-from: type=registry,ref=ghcr.io/${{ env.IMAGE_NAME }}:buildcache
           # cache-to: type=registry,ref=ghcr.io/${{ env.IMAGE_NAME }}:buildcache,mode=max
 
-  deploy:
-    needs: build-and-push
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
-    
-    steps:
-      - name: Deploy to Render
-        uses: johnbeynon/render-deploy-action@v1.0.0
-        with:
-          service-id: ${{ secrets.RENDER_SERVICE_ID }}
-          api-key: ${{ secrets.RENDER_API_KEY }}
+  # Note: Render will auto-deploy when it detects the new Docker image
+  # No manual deployment step needed - Render watches your repository
+  # and automatically deploys on changes
