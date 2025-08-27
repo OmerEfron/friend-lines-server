@@ -44,21 +44,25 @@ const newsflashController = {
   async getMyNewsflashes(req, res, next) {
     try {
       const userId = req.user.uuid;
+      const page = parseInt(req.query.page) || 1;
+      const limit = parseInt(req.query.limit) || 20;
       
       // Get user's friends and groups
       const userFriends = await friendshipService.getFriends(userId);
       const userGroups = await groupService.getUserGroups(userId);
       const userGroupIds = userGroups.map(group => group.id);
       
-      const newsflashes = await newsflashService.getNewsflashesForUser(
+      const result = await newsflashService.getNewsflashesForUser(
         userId, 
         userFriends, 
-        userGroupIds
+        userGroupIds,
+        page,
+        limit
       );
       
       res.status(200).json({
         success: true,
-        data: { newsflashes }
+        data: result
       });
     } catch (error) {
       next(error);
@@ -68,12 +72,14 @@ const newsflashController = {
   async getNewsflashesByAuthor(req, res, next) {
     try {
       const { authorId } = req.params;
+      const page = parseInt(req.query.page) || 1;
+      const limit = parseInt(req.query.limit) || 20;
       
-      const newsflashes = await newsflashService.getNewsflashesByAuthor(authorId);
+      const result = await newsflashService.getNewsflashesByAuthor(authorId, page, limit);
       
       res.status(200).json({
         success: true,
-        data: { newsflashes }
+        data: result
       });
     } catch (error) {
       next(error);
@@ -84,6 +90,8 @@ const newsflashController = {
     try {
       const { groupId } = req.params;
       const userId = req.user.uuid;
+      const page = parseInt(req.query.page) || 1;
+      const limit = parseInt(req.query.limit) || 20;
       
       // Check if user is a member of the group
       const groupMembers = await groupService.getGroupMembers(groupId);
@@ -94,11 +102,11 @@ const newsflashController = {
         });
       }
       
-      const newsflashes = await newsflashService.getNewsflashesByGroup(groupId);
+      const result = await newsflashService.getNewsflashesByGroup(groupId, page, limit);
       
       res.status(200).json({
         success: true,
-        data: { newsflashes }
+        data: result
       });
     } catch (error) {
       next(error);

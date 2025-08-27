@@ -36,6 +36,24 @@ const newsflashValidator = {
     }
     
     return true;
+  },
+  
+  validatePagination(page, limit) {
+    const errors = [];
+    
+    if (page && (isNaN(page) || page < 1)) {
+      errors.push('Page must be a positive number');
+    }
+    
+    if (limit && (isNaN(limit) || limit < 1 || limit > 100)) {
+      errors.push('Limit must be between 1 and 100');
+    }
+    
+    if (errors.length > 0) {
+      throw new Error(errors.join(', '));
+    }
+    
+    return true;
   }
 };
 

@@ -56,6 +56,35 @@ const userService = {
     return null;
   },
   
+  async searchUsers(query, page = 1, limit = 20) {
+    const searchResults = [];
+    const searchTerm = query.toLowerCase().trim();
+    
+    for (const user of users.values()) {
+      if (user.username.toLowerCase().includes(searchTerm) || 
+          user.fullName.toLowerCase().includes(searchTerm) ||
+          user.email.toLowerCase().includes(searchTerm)) {
+        const { password: _, ...userWithoutPassword } = user;
+        searchResults.push(userWithoutPassword);
+      }
+    }
+    
+    // Apply pagination
+    const startIndex = (page - 1) * limit;
+    const endIndex = startIndex + limit;
+    const paginatedResults = searchResults.slice(startIndex, endIndex);
+    
+    return {
+      users: paginatedResults,
+      pagination: {
+        page,
+        limit,
+        total: searchResults.length,
+        totalPages: Math.ceil(searchResults.length / limit)
+      }
+    };
+  },
+  
   async validatePassword(user, password) {
     return bcrypt.compare(password, user.password);
   }

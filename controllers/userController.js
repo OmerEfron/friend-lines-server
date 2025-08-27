@@ -27,6 +27,28 @@ const userController = {
     } catch (error) {
       next(error);
     }
+  },
+  
+  async searchUsers(req, res, next) {
+    try {
+      const { q, page, limit } = req.query;
+      
+      if (!q || q.trim().length === 0) {
+        return res.status(400).json({
+          success: false,
+          error: { message: 'Search query is required' }
+        });
+      }
+      
+      const result = await userService.searchUsers(q, parseInt(page) || 1, parseInt(limit) || 20);
+      
+      res.status(200).json({
+        success: true,
+        data: result
+      });
+    } catch (error) {
+      next(error);
+    }
   }
 };
 

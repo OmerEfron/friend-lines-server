@@ -27,6 +27,8 @@ A lightweight Express.js application with a modular structure following best pra
 │   ├── friendshipService.js
 │   ├── groupService.js
 │   ├── newsflashService.js
+│   ├── utils/           # Utility functions
+│   │   └── paginationUtils.js
 │   └── validators/      # Input validation
 │       ├── userValidator.js
 │       ├── friendshipValidator.js
@@ -74,6 +76,7 @@ npm start
 - **POST** `/api/auth/login` - User login
 - **POST** `/api/users/register` - User registration
 - **GET** `/api/users/profile` - Get user profile (protected)
+- **GET** `/api/users/search` - Search users by username, full name, or email (protected)
 
 ### Friendships
 - **POST** `/api/friendships/request` - Send friend request
@@ -97,6 +100,8 @@ npm start
 - **GET** `/api/newsflashes/my-feed` - Get user's personalized newsflash feed
 - **GET** `/api/newsflashes/author/:authorId` - Get newsflashes by specific author
 - **GET** `/api/newsflashes/group/:groupId` - Get newsflashes from specific group
+
+**Pagination Support:** All newsflash endpoints support `?page=1&limit=20` query parameters
 
 ## Environment Variables
 

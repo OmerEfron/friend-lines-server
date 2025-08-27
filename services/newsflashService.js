@@ -1,5 +1,6 @@
 const { v4: uuidv4 } = require('uuid');
 const newsflashValidator = require('./validators/newsflashValidator');
+const { applyPagination } = require('./utils/paginationUtils');
 
 // In-memory storage for newsflashes
 const newsflashes = new Map(); // newsflashId -> newsflash object
@@ -61,7 +62,7 @@ const newsflashService = {
     return { success: true, message: 'Newsflash deleted successfully' };
   },
   
-  async getNewsflashesForUser(userId, userFriends, userGroups) {
+  async getNewsflashesForUser(userId, userFriends, userGroups, page = 1, limit = 20) {
     const userNewsflashes = [];
     
     // Get newsflashes for all friends (public to friends)
@@ -87,10 +88,17 @@ const newsflashService = {
     }
     
     // Sort by creation date (newest first)
-    return userNewsflashes.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    const sortedNewsflashes = userNewsflashes.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    
+    // Apply pagination
+    const result = applyPagination(sortedNewsflashes, page, limit);
+    result.newsflashes = result.items;
+    delete result.items;
+    
+    return result;
   },
   
-  async getNewsflashesByAuthor(authorId) {
+  async getNewsflashesByAuthor(authorId, page = 1, limit = 20) {
     const authorNewsflashes = [];
     
     for (const newsflash of newsflashes.values()) {
@@ -99,10 +107,17 @@ const newsflashService = {
       }
     }
     
-    return authorNewsflashes.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    const sortedNewsflashes = authorNewsflashes.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    
+    // Apply pagination
+    const result = applyPagination(sortedNewsflashes, page, limit);
+    result.newsflashes = result.items;
+    delete result.items;
+    
+    return result;
   },
   
-  async getNewsflashesByGroup(groupId) {
+  async getNewsflashesByGroup(groupId, page = 1, limit = 20) {
     const groupNewsflashesList = [];
     const groupNews = groupNewsflashes.get(groupId);
     
@@ -115,7 +130,14 @@ const newsflashService = {
       }
     }
     
-    return groupNewsflashesList.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    const sortedNewsflashes = groupNewsflashesList.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    
+    // Apply pagination
+    const result = applyPagination(sortedNewsflashes, page, limit);
+    result.newsflashes = result.items;
+    delete result.items;
+    
+    return result;
   }
 };
 
