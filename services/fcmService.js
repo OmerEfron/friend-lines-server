@@ -9,29 +9,50 @@ const fcmService = {
         return { success: 0, failure: 0 };
       }
 
-      const message = {
-        notification: {
-          title,
-          body
-        },
-        data: {
-          ...data,
-          timestamp: new Date().toISOString()
-        },
-        tokens: deviceTokens
-      };
+      // Debug Firebase Admin SDK
+      console.log('=== FCM DEBUG ===');
+      console.log('Admin object:', typeof admin);
+      console.log('Admin.messaging:', typeof admin.messaging);
+      console.log('Admin.messaging():', admin.messaging());
+      console.log('Available methods:', Object.getOwnPropertyNames(Object.getPrototypeOf(admin.messaging())));
+      console.log('================');
 
-      const response = await admin.messaging().sendMulticast(message);
+      let successCount = 0;
+      let failureCount = 0;
+
+      // Send to each token individually since sendMulticast might not be available
+      for (const token of deviceTokens) {
+        try {
+          const message = {
+            notification: {
+              title,
+              body
+            },
+            data: {
+              ...data,
+              timestamp: new Date().toISOString()
+            },
+            token: token
+          };
+
+          const response = await admin.messaging().send(message);
+          console.log('FCM message sent successfully:', response);
+          successCount++;
+        } catch (error) {
+          console.error('FCM message failed for token:', token, error.message);
+          failureCount++;
+        }
+      }
       
       logger.info('FCM', 'Notification sent successfully', {
-        success: response.successCount,
-        failure: response.failureCount,
+        success: successCount,
+        failure: failureCount,
         total: deviceTokens.length
       });
 
       return {
-        success: response.successCount,
-        failure: response.failureCount
+        success: successCount,
+        failure: failureCount
       };
     } catch (error) {
       logger.error('FCM', 'Failed to send notification', {
