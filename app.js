@@ -23,7 +23,7 @@ connectDB();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Request logging middleware (must be early to capture all requests)
+// Request logging middleware (must be after body parsers)
 app.use(requestLogger);
 
 // Serve static files (API documentation)
@@ -31,12 +31,12 @@ app.use(express.static('public'));
 
 // Routes
 app.use('/api', healthRoutes);
+app.use('/api/notifications', notificationRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/friendships', friendshipRoutes);
 app.use('/api/groups', groupRoutes);
 app.use('/api/newsflashes', newsflashRoutes);
-app.use('/api/notifications', notificationRoutes);
 
 // Root route - serve API documentation
 app.get('/', (req, res) => {
