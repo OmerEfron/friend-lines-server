@@ -61,10 +61,8 @@ const notificationService = {
 
   async getFriendsRecipients(authorId) {
     try {
-      const friendships = await friendshipService.getUserFriendships(authorId);
-      return friendships.map(friendship => 
-        friendship.user1Id === authorId ? friendship.user2Id : friendship.user1Id
-      );
+      const friendIds = await friendshipService.getFriends(authorId);
+      return friendIds; // getFriends already returns the user IDs
     } catch (error) {
       logger.error('NOTIFICATION', 'Failed to get friends recipients', {
         error: error.message,
