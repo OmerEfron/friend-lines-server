@@ -62,8 +62,8 @@ const newsflashService = {
     // Validate pagination
     newsflashValidator.validatePagination(page, limit);
     
-    // Get newsflashes for friends (public to friends)
-    const friendsNewsflashes = await Newsflash.findForFriends();
+    // Get newsflashes for friends (public to friends) with author info populated
+    const friendsNewsflashes = await Newsflash.findForFriends().populate('author', 'fullName');
     
     // Apply pagination
     const paginatedResults = applyPagination(friendsNewsflashes, page, limit);
