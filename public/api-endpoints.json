@@ -56,6 +56,11 @@
           },
           "response": "Created user data"
         },
+        "GET /api/users/profile": {
+          "description": "Get current user profile information",
+          "auth": true,
+          "response": "Current user profile data"
+        },
         "GET /api/users/search": {
           "description": "Search users",
           "auth": true,
@@ -193,7 +198,7 @@
         }
       },
       "notifications": {
-        "POST /api/notifications/register-device": {
+        "POST /api/notifications/register": {
           "description": "Register device for push notifications",
           "auth": true,
           "body": {

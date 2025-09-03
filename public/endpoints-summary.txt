@@ -12,6 +12,7 @@ GET /api/health - No auth required - Returns server status
 
 USER MANAGEMENT:
 POST /api/users/register - No auth - Body: {username, fullName, email, password}
+GET /api/users/profile - Auth required
 GET /api/users/search?q=<query>&page=<page>&limit=<limit> - Auth required
 
 AUTHENTICATION:
@@ -44,7 +45,7 @@ GET /api/newsflashes/group/:groupId?page=<page>&limit=<limit> - Auth required
 DELETE /api/newsflashes/:newsflashId - Auth required
 
 NOTIFICATIONS:
-POST /api/notifications/register-device - Auth required - Body: {deviceToken, platform?}
+POST /api/notifications/register - Auth required - Body: {deviceToken, platform?}
 GET /api/notifications/history - Auth required
 
 PAGINATION PARAMETERS:

@@ -102,10 +102,10 @@
     }
   },
   "endpoints_summary": {
-    "total_endpoints": 28,
+    "total_endpoints": 29,
     "categories": {
       "health": 1,
-      "users": 2,
+      "users": 3,
       "authentication": 4,
       "friendships": 5,
       "groups": 7,
@@ -113,11 +113,11 @@
       "notifications": 2
     },
     "authentication_required": {
-      "yes": 25,
+      "yes": 26,
       "no": 3
     },
     "http_methods": {
-      "GET": 13,
+      "GET": 14,
       "POST": 12,
       "DELETE": 3
     }

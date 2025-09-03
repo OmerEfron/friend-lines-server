@@ -329,6 +329,35 @@
 
             <div class="endpoint">
                 <span class="method get">GET</span>
+                <span class="endpoint-url">/api/users/profile</span>
+                <div class="endpoint-description">
+                    Get current user profile information. Requires authentication.
+                </div>
+                <div class="example">
+                    <h4>Example Request:</h4>
+                    <div class="code-block">curl -X GET "https://friend-lines-server.onrender.com/api/users/profile" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"</div>
+                </div>
+                <div class="response">
+                    <h4>Response <span class="status-badge status-200">200 OK</span></h4>
+                    <div class="code-block">{
+  "success": true,
+  "data": {
+    "user": {
+      "uuid": "user-uuid-here",
+      "username": "john_doe",
+      "fullName": "John Doe",
+      "email": "john.doe@example.com",
+      "createdAt": "2025-08-27T18:53:10.654Z",
+      "updatedAt": "2025-08-27T18:53:10.654Z"
+    }
+  }
+}</div>
+                </div>
+            </div>
+
+            <div class="endpoint">
+                <span class="method get">GET</span>
                 <span class="endpoint-url">/api/users/search?q=searchterm&page=1&limit=20</span>
                 <div class="endpoint-description">
                     Search for users by username, full name, or email. Requires authentication.
@@ -562,13 +591,13 @@
             
             <div class="endpoint">
                 <span class="method post">POST</span>
-                <span class="endpoint-url">/api/notifications/register-device</span>
+                <span class="endpoint-url">/api/notifications/register</span>
                 <div class="endpoint-description">
                     Register a mobile device for push notifications. Requires authentication.
                 </div>
                 <div class="example">
                     <h4>Example Request:</h4>
-                    <div class="code-block">curl -X POST "https://friend-lines-server.onrender.com/api/notifications/register-device" \
+                    <div class="code-block">curl -X POST "https://friend-lines-server.onrender.com/api/notifications/register" \
   -H "Authorization: Bearer YOUR_JWT_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{

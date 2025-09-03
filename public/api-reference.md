@@ -38,6 +38,11 @@ Authorization: Bearer <your-access-token>
   - **Body**: `{ username, fullName, email, password }`
   - **Validation**: username (3-30 chars, alphanumeric + underscore), email (valid format), password (min 6 chars)
 
+- **GET** `/api/users/profile`
+  - **Description**: Get current user profile information
+  - **Auth Required**: Yes
+  - **Response**: Current user profile data
+
 - **GET** `/api/users/search?q=<query>&page=<page>&limit=<limit>`
   - **Description**: Search users by username, full name, or email
   - **Auth Required**: Yes
@@ -171,7 +176,7 @@ Authorization: Bearer <your-access-token>
   - **Response**: Success confirmation
 
 ### Notifications
-- **POST** `/api/notifications/register-device`
+- **POST** `/api/notifications/register`
   - **Description**: Register device for push notifications
   - **Auth Required**: Yes
   - **Body**: `{ deviceToken, platform? }`
