@@ -63,7 +63,7 @@ const newsflashService = {
     newsflashValidator.validatePagination(page, limit);
     
     // Get newsflashes for friends (public to friends) with author info populated
-    const friendsNewsflashes = await Newsflash.findForFriends().populate('author', 'fullName');
+    const friendsNewsflashes = await Newsflash.findForFriends().populate('author', 'fullName username email');
     
     // Apply pagination
     const paginatedResults = applyPagination(friendsNewsflashes, page, limit);
@@ -83,8 +83,8 @@ const newsflashService = {
     // Validate pagination
     newsflashValidator.validatePagination(page, limit);
     
-    // Get newsflashes by author
-    const newsflashes = await Newsflash.findByAuthor(authorId);
+    // Get newsflashes by author with author info populated
+    const newsflashes = await Newsflash.findByAuthor(authorId).populate('author', 'fullName username email');
     
     // Apply pagination
     const paginatedResults = applyPagination(newsflashes, page, limit);
@@ -107,8 +107,8 @@ const newsflashService = {
     // Convert string ID to ObjectId
     const groupObjectId = new mongoose.Types.ObjectId(groupId);
     
-    // Get newsflashes for a specific group
-    const newsflashes = await Newsflash.findForGroup(groupObjectId);
+    // Get newsflashes for a specific group with author info populated
+    const newsflashes = await Newsflash.findForGroup(groupObjectId).populate('author', 'fullName username email');
     
     // Apply pagination
     const paginatedResults = applyPagination(newsflashes, page, limit);
