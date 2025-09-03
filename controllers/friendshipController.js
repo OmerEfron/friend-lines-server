@@ -20,10 +20,24 @@ const friendshipController = {
   
   async acceptFriendRequest(req, res, next) {
     try {
-      const { fromUserId } = req.body;
+      // Accept both field names for better client compatibility
+      const { fromUserId, friendId } = req.body;
       const userId = req.user.uuid;
       
-      const result = await friendshipService.acceptFriendRequest(userId, fromUserId);
+      // Use fromUserId if provided, otherwise fall back to friendId
+      const requesterId = fromUserId || friendId;
+      
+      if (!requesterId) {
+        return res.status(400).json({
+          success: false,
+          error: {
+            message: 'Missing required field: fromUserId or friendId',
+            statusCode: 400
+          }
+        });
+      }
+      
+      const result = await friendshipService.acceptFriendRequest(userId, requesterId);
       
       res.status(200).json({
         success: true,

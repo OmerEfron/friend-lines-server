@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const userValidator = require('./validators/userValidator');
+const tokenService = require('./tokenService');
 const logger = require('./utils/logger');
 
 const authService = {
@@ -33,31 +34,62 @@ const authService = {
       throw new Error('Invalid credentials');
     }
     
-    // Generate JWT token
-    const token = jwt.sign(
-      { uuid: user.uuid, username: user.username },
-      process.env.JWT_SECRET || 'your-secret-key',
-      { expiresIn: '24h' }
-    );
+    // Generate tokens
+    const accessToken = tokenService.generateAccessToken({
+      uuid: user.uuid,
+      username: user.username
+    });
     
-        logger.info('USER_AUTH', 'User login successful', {
+    const refreshToken = await tokenService.generateRefreshToken(user.uuid);
+    
+    logger.info('USER_AUTH', 'User login successful', {
       userId: user.uuid,
-        username: user.username,
-        ip: logger.getContext()?.ip
-      });
+      username: user.username,
+      ip: logger.getContext()?.ip
+    });
     
     return {
       user: user.toSafeObject(),
-      token
+      accessToken,
+      refreshToken
     };
   },
   
-  verifyToken(token) {
+  async refreshTokens(refreshToken) {
     try {
-      return jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
+      const result = await tokenService.refreshAccessToken(refreshToken);
+      
+      logger.info('USER_AUTH', 'Tokens refreshed successfully', {
+        userId: result.user.uuid
+      });
+      
+      return result;
     } catch (error) {
-      throw new Error('Invalid token');
+      logger.warn('USER_AUTH', 'Token refresh failed', {
+        error: error.message
+      });
+      throw error;
     }
+  },
+  
+  async logout(refreshToken) {
+    try {
+      if (refreshToken) {
+        await tokenService.revokeRefreshToken(refreshToken);
+      }
+      
+      logger.info('USER_AUTH', 'User logout successful');
+      return { success: true };
+    } catch (error) {
+      logger.error('USER_AUTH', 'Logout failed', {
+        error: error.message
+      });
+      throw new Error('Logout failed');
+    }
+  },
+  
+  verifyToken(token) {
+    return tokenService.verifyAccessToken(token);
   },
   
   async getCurrentUser(uuid) {

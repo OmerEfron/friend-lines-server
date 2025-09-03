@@ -86,10 +86,13 @@
       "json_endpoints": "Parse as JSON, contains structured endpoint information"
     },
     "authentication_info": {
-      "type": "JWT Bearer Token",
-      "header": "Authorization: Bearer <token>",
+      "type": "JWT Bearer Token with Refresh Token",
+      "header": "Authorization: Bearer <access_token>",
       "endpoint": "/api/auth/login",
-      "expiry": "24 hours"
+      "access_token_expiry": "15 minutes",
+      "refresh_token_expiry": "7 days",
+      "refresh_endpoint": "/api/auth/refresh",
+      "logout_endpoint": "/api/auth/logout"
     },
     "common_patterns": {
       "pagination": "All list endpoints support ?page=<num>&limit=<num>",
@@ -99,23 +102,23 @@
     }
   },
   "endpoints_summary": {
-    "total_endpoints": 25,
+    "total_endpoints": 28,
     "categories": {
       "health": 1,
       "users": 2,
-      "authentication": 1,
+      "authentication": 4,
       "friendships": 5,
       "groups": 7,
       "newsflashes": 5,
       "notifications": 2
     },
     "authentication_required": {
-      "yes": 22,
+      "yes": 25,
       "no": 3
     },
     "http_methods": {
-      "GET": 12,
-      "POST": 10,
+      "GET": 13,
+      "POST": 12,
       "DELETE": 3
     }
   },
@@ -124,7 +127,8 @@
     "Group": "MongoDB ID, name, description, creatorId, members, timestamps",
     "Newsflash": "MongoDB ID, authorId, content (max 100 chars), targetType, targetId, timestamps",
     "Friendship": "MongoDB ID, user1Id, user2Id, status, timestamps",
-    "DeviceToken": "MongoDB ID, userId, deviceToken, platform, isActive, timestamps"
+    "DeviceToken": "MongoDB ID, userId, deviceToken, platform, isActive, timestamps",
+    "RefreshToken": "MongoDB ID, token (UUID), userId, expiresAt, isRevoked, timestamps"
   },
   "rate_limiting": {
     "enabled": true,

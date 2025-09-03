@@ -8,10 +8,20 @@ Friend Lines is a social networking API that enables user management, friendship
 **Content-Type**: `application/json`
 
 ## Authentication
-Most endpoints require JWT authentication. Include the token in the Authorization header:
+Most endpoints require JWT authentication with refresh token support. Include the access token in the Authorization header:
 ```
-Authorization: Bearer <your-jwt-token>
+Authorization: Bearer <your-access-token>
 ```
+
+**Token Types:**
+- **Access Token**: Short-lived (15 minutes) for API requests
+- **Refresh Token**: Long-lived (7 days) stored in HTTP-only cookies for security
+
+**Authentication Flow:**
+1. Login with `/api/auth/login` to get access token and refresh token
+2. Use access token for API requests
+3. When access token expires, use `/api/auth/refresh` to get new tokens
+4. Logout with `/api/auth/logout` to revoke refresh token
 
 ## Endpoints
 
@@ -36,10 +46,27 @@ Authorization: Bearer <your-jwt-token>
 
 ### Authentication
 - **POST** `/api/auth/login`
-  - **Description**: User login to get JWT token
+  - **Description**: User login to get access token and refresh token
   - **Auth Required**: No
   - **Body**: `{ username, password }`
-  - **Response**: User data and JWT token
+  - **Response**: User data, access token, and refresh token (in HTTP-only cookie)
+
+- **POST** `/api/auth/refresh`
+  - **Description**: Refresh access token using refresh token
+  - **Auth Required**: No
+  - **Cookies**: `refreshToken` (HTTP-only cookie)
+  - **Response**: New access token and refresh token
+
+- **POST** `/api/auth/logout`
+  - **Description**: Logout user and revoke refresh token
+  - **Auth Required**: No
+  - **Cookies**: `refreshToken` (HTTP-only cookie)
+  - **Response**: Logout confirmation
+
+- **GET** `/api/auth/me`
+  - **Description**: Get current user profile
+  - **Auth Required**: Yes
+  - **Response**: Current user data
 
 ### Friendships
 - **POST** `/api/friendships/request`
@@ -277,16 +304,30 @@ curl -X POST "https://friend-lines-server.onrender.com/api/auth/login" \
   }'
 ```
 
+### Refresh Token
+```bash
+curl -X POST "https://friend-lines-server.onrender.com/api/auth/refresh" \
+  -H "Content-Type: application/json" \
+  --cookie "refreshToken=your-refresh-token"
+```
+
+### Logout
+```bash
+curl -X POST "https://friend-lines-server.onrender.com/api/auth/logout" \
+  -H "Content-Type: application/json" \
+  --cookie "refreshToken=your-refresh-token"
+```
+
 ### Search Users (with auth)
 ```bash
 curl -X GET "https://friend-lines-server.onrender.com/api/users/search?q=john&page=1&limit=10" \
-  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
 ```
 
 ### Create Newsflash
 ```bash
 curl -X POST "https://friend-lines-server.onrender.com/api/newsflashes/create" \
-  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
     "content": "Hello friends! This is my newsflash.",
@@ -297,7 +338,8 @@ curl -X POST "https://friend-lines-server.onrender.com/api/newsflashes/create" \
 ## Notes for AI Agents
 - All UUIDs are in standard UUID v4 format
 - Timestamps are in ISO 8601 format (UTC)
-- Authentication tokens expire after 24 hours
+- Access tokens expire after 15 minutes, refresh tokens after 7 days
+- Refresh tokens are stored in HTTP-only cookies for security
 - Maximum content length for newsflashes is 100 characters
 - Pagination limits are enforced server-side
 - Error responses include descriptive messages

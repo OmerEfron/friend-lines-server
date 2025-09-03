@@ -2,8 +2,10 @@ FRIEND LINES API ENDPOINTS SUMMARY
 ==================================
 
 BASE URL: https://friend-lines-server.onrender.com
-AUTHENTICATION: JWT Bearer Token (Authorization: Bearer <token>)
+AUTHENTICATION: JWT Bearer Token with Refresh Token (Authorization: Bearer <access_token>)
 CONTENT-TYPE: application/json
+ACCESS TOKEN EXPIRY: 15 minutes
+REFRESH TOKEN EXPIRY: 7 days (stored in HTTP-only cookies)
 
 HEALTH CHECK:
 GET /api/health - No auth required - Returns server status
@@ -13,7 +15,10 @@ POST /api/users/register - No auth - Body: {username, fullName, email, password}
 GET /api/users/search?q=<query>&page=<page>&limit=<limit> - Auth required
 
 AUTHENTICATION:
-POST /api/auth/login - No auth - Body: {username, password} - Returns JWT token
+POST /api/auth/login - No auth - Body: {username, password} - Returns access token and refresh token
+POST /api/auth/refresh - No auth - Cookie: refreshToken - Returns new access token and refresh token
+POST /api/auth/logout - No auth - Cookie: refreshToken - Revokes refresh token
+GET /api/auth/me - Auth required - Returns current user data
 
 FRIENDSHIPS:
 POST /api/friendships/request - Auth required - Body: {friendId}
@@ -73,4 +78,5 @@ DATA TYPES:
 - Pagination: Always includes {page, limit, total, totalPages}
 
 RATE LIMITING: Implemented - Use exponential backoff for retries
-TOKEN EXPIRY: JWT tokens expire after 24 hours
+TOKEN EXPIRY: Access tokens expire after 15 minutes, refresh tokens after 7 days
+REFRESH TOKEN SECURITY: Stored in HTTP-only cookies to prevent XSS attacks

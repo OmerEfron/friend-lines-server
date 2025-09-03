@@ -20,7 +20,28 @@
             "username": "string",
             "password": "string"
           },
-          "response": "User data and JWT token"
+          "response": "User data, access token, and refresh token (in HTTP-only cookie)"
+        },
+        "POST /api/auth/refresh": {
+          "description": "Refresh access token using refresh token",
+          "auth": false,
+          "cookies": {
+            "refreshToken": "string (HTTP-only cookie)"
+          },
+          "response": "New access token and refresh token"
+        },
+        "POST /api/auth/logout": {
+          "description": "Logout user and revoke refresh token",
+          "auth": false,
+          "cookies": {
+            "refreshToken": "string (HTTP-only cookie)"
+          },
+          "response": "Logout confirmation"
+        },
+        "GET /api/auth/me": {
+          "description": "Get current user profile",
+          "auth": true,
+          "response": "Current user data"
         }
       },
       "users": {
@@ -189,9 +210,11 @@
       }
     },
     "authentication": {
-      "type": "JWT Bearer Token",
-      "header": "Authorization: Bearer <token>",
-      "note": "Most endpoints require authentication. Get token from /api/auth/login"
+      "type": "JWT Bearer Token with Refresh Token",
+      "header": "Authorization: Bearer <access_token>",
+      "access_token_expiry": "15 minutes",
+      "refresh_token_expiry": "7 days",
+      "note": "Most endpoints require authentication. Get access token from /api/auth/login. Refresh tokens are stored in HTTP-only cookies."
     },
     "pagination": {
       "defaultPage": 1,

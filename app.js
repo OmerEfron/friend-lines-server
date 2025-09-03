@@ -1,5 +1,6 @@
 const express = require('express');
 const path = require('path');
+const cookieParser = require('cookie-parser');
 const { connectDB } = require('./config/database');
 const requestLogger = require('./middlewares/requestLogger');
 const healthRoutes = require('./routes/healthRoutes');
@@ -22,6 +23,7 @@ connectDB();
 // Middleware order: body parsers, custom middleware, routes, error handlers
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 
 // Request logging middleware (must be after body parsers)
 app.use(requestLogger);
