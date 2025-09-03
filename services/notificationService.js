@@ -1,4 +1,5 @@
 const DeviceToken = require('../models/DeviceToken');
+const User = require('../models/User');
 const fcmService = require('./fcmService');
 const friendshipService = require('./friendshipService');
 const groupService = require('./groupService');
@@ -29,10 +30,14 @@ const notificationService = {
         return;
       }
 
-      // Send notification with just the content
+      // Get author's full name for the notification title
+      const author = await User.findOne({ uuid: authorId });
+      const notificationTitle = author ? author.fullName : 'New Newsflash';
+
+      // Send notification with author's name as title
       const result = await fcmService.sendNotification(
         deviceTokens,
-        'New Newsflash',
+        notificationTitle,
         newsflashContent,
         {
           type: 'newsflash',
